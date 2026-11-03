@@ -1,6 +1,0 @@
-/// Base URL of the GitHub release that holds the Parquet data files
-expression DataUrl = "https://github.com/vlpatkosdani/semantic-model-refresh-test/releases/download/data-1m-v1/" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
-	lineageTag: 51a5e502-ea90-4d89-b63e-71f40e319111
-
-	annotation PBI_ResultType = Text
-
