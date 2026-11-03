@@ -183,11 +183,12 @@ table Product
 		mode: import
 		source =
 				let
-				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
-				    dbo_Product = #"Contoso"{[Schema="dbo",Item="Product"]}[Data]
+				    Source = Parquet.Document(Binary.Buffer(Web.Contents(DataUrl, [RelativePath = "product.parquet"]))),
+				    #"Renamed Columns" = Table.RenameColumns(Source, {{"ProductCode", "Product Code"}, {"ProductName", "Product Name"}, {"WeightUnit", "Weight Unit Measure"}, {"Cost", "Unit Cost"}, {"Price", "Unit Price"}, {"SubCategoryKey", "Subcategory Code"}, {"SubCategoryName", "Subcategory"}, {"CategoryKey", "Category Code"}, {"CategoryName", "Category"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"ProductKey", "Product Code", "Product Name", "Manufacturer", "Brand", "Color", "Weight Unit Measure", "Weight", "Unit Cost", "Unit Price", "Subcategory Code", "Subcategory", "Category Code", "Category"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Selected Columns", {{"ProductKey", Int64.Type}, {"Product Code", type text}, {"Product Name", type text}, {"Manufacturer", type text}, {"Brand", type text}, {"Color", type text}, {"Weight Unit Measure", type text}, {"Weight", type number}, {"Unit Cost", Currency.Type}, {"Unit Price", Currency.Type}, {"Subcategory Code", Int64.Type}, {"Subcategory", type text}, {"Category Code", Int64.Type}, {"Category", type text}})
 				in
-				    dbo_Product
+				    #"Changed Type"
 
 	annotation PBI_ResultType = Table
 

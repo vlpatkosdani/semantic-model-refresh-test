@@ -212,10 +212,10 @@ table Sales
 		mode: import
 		source =
 				let
-				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
-				    dbo_Sales = #"Contoso"{[Schema="dbo",Item="Sales"]}[Data],
-				    #"Changed Type" = Table.TransformColumnTypes(dbo_Sales,{{"Quantity", Int64.Type}, {"Unit Price", Currency.Type}, {"Net Price", Currency.Type}, {"Unit Cost", Currency.Type}})
+				    Source = Parquet.Document(Binary.Buffer(Web.Contents(DataUrl, [RelativePath = "sales.parquet"]))),
+				    #"Renamed Columns" = Table.RenameColumns(Source, {{"OrderKey", "Order Number"}, {"LineNumber", "Line Number"}, {"OrderDate", "Order Date"}, {"DeliveryDate", "Delivery Date"}, {"UnitPrice", "Unit Price"}, {"NetPrice", "Net Price"}, {"UnitCost", "Unit Cost"}, {"CurrencyCode", "Currency Code"}, {"ExchangeRate", "Exchange Rate"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"Order Number", "Line Number", "Order Date", "Delivery Date", "CustomerKey", "StoreKey", "ProductKey", "Quantity", "Unit Price", "Net Price", "Unit Cost", "Currency Code", "Exchange Rate"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Selected Columns", {{"Order Number", Int64.Type}, {"Line Number", Int64.Type}, {"Order Date", type date}, {"Delivery Date", type date}, {"CustomerKey", Int64.Type}, {"StoreKey", Int64.Type}, {"ProductKey", Int64.Type}, {"Quantity", Int64.Type}, {"Unit Price", Currency.Type}, {"Net Price", Currency.Type}, {"Unit Cost", Currency.Type}, {"Currency Code", type text}, {"Exchange Rate", type number}})
 				in
 				    #"Changed Type"
 

@@ -175,11 +175,14 @@ table Customer
 		mode: import
 		source =
 				let
-				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
-				    dbo_Customer = #"Contoso"{[Schema="dbo",Item="Customer"]}[Data]
+				    Source = Parquet.Document(Binary.Buffer(Web.Contents(DataUrl, [RelativePath = "customer.parquet"]))),
+				    #"Added Name" = Table.AddColumn(Source, "Name", each [GivenName] & " " & [Surname], type text),
+				    #"Renamed Codes" = Table.RenameColumns(#"Added Name", {{"State", "State Code"}, {"Country", "Country Code"}, {"StreetAddress", "Address"}, {"ZipCode", "Zip Code"}}),
+				    #"Renamed Names" = Table.RenameColumns(#"Renamed Codes", {{"StateFull", "State"}, {"CountryFull", "Country"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Names", {"CustomerKey", "Gender", "Name", "Address", "City", "State Code", "State", "Zip Code", "Country Code", "Country", "Continent", "Birthday", "Age"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Selected Columns", {{"CustomerKey", Int64.Type}, {"Gender", type text}, {"Address", type text}, {"City", type text}, {"State Code", type text}, {"State", type text}, {"Zip Code", type text}, {"Country Code", type text}, {"Country", type text}, {"Continent", type text}, {"Birthday", type date}, {"Age", Int64.Type}})
 				in
-				    dbo_Customer
+				    #"Changed Type"
 
 	annotation PBI_ResultType = Table
 

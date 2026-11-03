@@ -252,11 +252,12 @@ table Date
 		mode: import
 		source =
 				let
-				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
-				    dbo_Date = #"Contoso"{[Schema="dbo",Item="Date"]}[Data]
+				    Source = Parquet.Document(Binary.Buffer(Web.Contents(DataUrl, [RelativePath = "date.parquet"]))),
+				    #"Renamed Columns" = Table.RenameColumns(Source, {{"YearQuarter", "Year Quarter"}, {"YearQuarterNumber", "Year Quarter Number"}, {"YearMonth", "Year Month"}, {"YearMonthShort", "Year Month Short"}, {"YearMonthNumber", "Year Month Number"}, {"MonthShort", "Month Short"}, {"MonthNumber", "Month Number"}, {"DayofWeek", "Day of Week"}, {"DayofWeekShort", "Day of Week Short"}, {"DayofWeekNumber", "Day of Week Number"}, {"WorkingDay", "Working Day"}, {"WorkingDayNumber", "Working Day Number"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"Date", "Year", "Year Quarter", "Year Quarter Number", "Quarter", "Year Month", "Year Month Short", "Year Month Number", "Month", "Month Short", "Month Number", "Day of Week", "Day of Week Short", "Day of Week Number", "Working Day", "Working Day Number"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Selected Columns", {{"Date", type date}, {"Year", Int64.Type}, {"Year Quarter", type text}, {"Year Quarter Number", Int64.Type}, {"Quarter", type text}, {"Year Month", type text}, {"Year Month Short", type text}, {"Year Month Number", Int64.Type}, {"Month", type text}, {"Month Short", type text}, {"Month Number", Int64.Type}, {"Day of Week", type text}, {"Day of Week Short", type text}, {"Day of Week Number", Int64.Type}, {"Working Day", type logical}, {"Working Day Number", Int64.Type}})
 				in
-				    dbo_Date
+				    #"Changed Type"
 
 	annotation PBI_ResultType = Table
 

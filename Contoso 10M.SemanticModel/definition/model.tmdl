@@ -8,7 +8,7 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["Customer","Date","Product","Sales","Store","Currency Exchange","DatabaseName"]
+annotation PBI_QueryOrder = ["Customer","Date","Product","Sales","Store","Currency Exchange","DataUrl"]
 
 annotation PBI_ProTooling = ["DevMode"]
 

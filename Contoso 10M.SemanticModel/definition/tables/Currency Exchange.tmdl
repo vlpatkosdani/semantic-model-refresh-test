@@ -63,11 +63,10 @@ table 'Currency Exchange'
 		mode: import
 		source =
 				let
-				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
-				    #"dbo_Currency Exchange" = #"Contoso"{[Schema="dbo",Item="Currency Exchange"]}[Data]
+				    Source = Parquet.Document(Binary.Buffer(Web.Contents(DataUrl, [RelativePath = "currencyexchange.parquet"]))),
+				    #"Changed Type" = Table.TransformColumnTypes(Source, {{"Date", type date}, {"FromCurrency", type text}, {"ToCurrency", type text}, {"Exchange", type number}})
 				in
-				    #"dbo_Currency Exchange"
+				    #"Changed Type"
 
 	changedProperty = IsHidden
 

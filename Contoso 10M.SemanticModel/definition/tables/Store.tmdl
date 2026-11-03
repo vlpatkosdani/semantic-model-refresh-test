@@ -116,11 +116,12 @@ table Store
 		mode: import
 		source =
 				let
-				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
-				    dbo_Store = #"Contoso"{[Schema="dbo",Item="Store"]}[Data]
+				    Source = Parquet.Document(Binary.Buffer(Web.Contents(DataUrl, [RelativePath = "store.parquet"]))),
+				    #"Renamed Columns" = Table.RenameColumns(Source, {{"StoreCode", "Store Code"}, {"CountryName", "Country"}, {"Description", "Name"}, {"SquareMeters", "Square Meters"}, {"OpenDate", "Open Date"}, {"CloseDate", "Close Date"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"StoreKey", "Store Code", "Country", "State", "Name", "Square Meters", "Open Date", "Close Date", "Status"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Selected Columns", {{"StoreKey", Int64.Type}, {"Store Code", Int64.Type}, {"Country", type text}, {"State", type text}, {"Name", type text}, {"Square Meters", Int64.Type}, {"Open Date", type date}, {"Close Date", type date}, {"Status", type text}})
 				in
-				    dbo_Store
+				    #"Changed Type"
 
 	annotation PBI_ResultType = Table
 
