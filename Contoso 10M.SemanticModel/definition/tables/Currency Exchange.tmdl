@@ -64,7 +64,7 @@ table 'Currency Exchange'
 		source =
 				let
 				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 10M"]}[Data],
+				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
 				    #"dbo_Currency Exchange" = #"Contoso"{[Schema="dbo",Item="Currency Exchange"]}[Data]
 				in
 				    #"dbo_Currency Exchange"

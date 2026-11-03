@@ -117,7 +117,7 @@ table Store
 		source =
 				let
 				    Source = Sql.Databases("Demo"),
-				    #"Contoso" = Source{[Name="Contoso V2 10M"]}[Data],
+				    #"Contoso" = Source{[Name="Contoso V2 1M"]}[Data],
 				    dbo_Store = #"Contoso"{[Schema="dbo",Item="Store"]}[Data]
 				in
 				    dbo_Store

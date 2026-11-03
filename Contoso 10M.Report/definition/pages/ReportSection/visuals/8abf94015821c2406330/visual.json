@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
   "name": "8abf94015821c2406330",
   "position": {
-    "x": 482.28763666947015,
+    "x": 456.04069045616563,
     "y": 0,
     "z": 2000,
     "height": 311.68248628299091,
-    "width": 424.05222475870079
+    "width": 419.13092234370617
   },
   "visual": {
     "visualType": "tableEx",
@@ -81,22 +81,6 @@
                 }
               }
             }
-          }
-        }
-      ],
-      "columnWidth": [
-        {
-          "properties": {
-            "value": {
-              "expr": {
-                "Literal": {
-                  "Value": "116.51695945978318D"
-                }
-              }
-            }
-          },
-          "selector": {
-            "metadata": "Product.Brand"
           }
         }
       ]
