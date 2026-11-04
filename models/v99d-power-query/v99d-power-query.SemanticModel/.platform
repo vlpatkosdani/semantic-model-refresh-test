@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v99d-power-query"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "169604c8-e793-4743-b9fe-1ae5937d6ba6"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v99d-power-query"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "50e8a4e3-7557-449d-85be-98cea51884c9"
+  }
+}

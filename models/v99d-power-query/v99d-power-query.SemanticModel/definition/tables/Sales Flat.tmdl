@@ -1,0 +1,307 @@
+table 'Sales Flat'
+	lineageTag: f1391171-ac4d-45ee-83fe-d43e654e356d
+
+	column 'Order Number'
+		dataType: int64
+		formatString: 0
+		lineageTag: 18fe2081-011b-4fd0-b539-7abecd898ec6
+		summarizeBy: none
+		sourceColumn: Order Number
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Line Number'
+		dataType: string
+		lineageTag: 581a3639-eb21-4618-811a-a81fa6da16ac
+		summarizeBy: none
+		sourceColumn: Line Number
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Order Date'
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 3253c9ac-b78f-4079-90bd-92d449f93907
+		summarizeBy: none
+		sourceColumn: Order Date
+
+		variation Variation
+			isDefault
+			relationship: fb1bf910-900a-4c5c-b4f4-d22153448d7f
+			defaultHierarchy: LocalDateTable_b2dcf6fb-acec-4e4b-a9f9-06281b161f23.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Delivery Date'
+		dataType: string
+		lineageTag: 82d15d14-f009-4239-b4bf-2357f7329453
+		summarizeBy: none
+		sourceColumn: Delivery Date
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column CustomerKey
+		dataType: string
+		lineageTag: cea7341b-858c-4863-a560-b7be46fbd351
+		summarizeBy: none
+		sourceColumn: CustomerKey
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column StoreKey
+		dataType: string
+		lineageTag: 8f17361e-914c-494a-9e6f-bb90bd841961
+		summarizeBy: none
+		sourceColumn: StoreKey
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column ProductKey
+		dataType: string
+		lineageTag: f5ad1d56-6ecb-4f44-9101-9bc6224584c0
+		summarizeBy: none
+		sourceColumn: ProductKey
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column Quantity
+		dataType: string
+		lineageTag: 50fd843e-23c1-40d3-8d19-eba3bc1b06e8
+		summarizeBy: none
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Unit Price'
+		dataType: string
+		lineageTag: 43b930bd-3277-46d0-b5d9-5b4a4285baf7
+		summarizeBy: none
+		sourceColumn: Unit Price
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Net Price'
+		dataType: string
+		lineageTag: 1d58e63e-3e6d-432a-bf15-967f3dfc6d57
+		summarizeBy: none
+		sourceColumn: Net Price
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Unit Cost'
+		dataType: string
+		lineageTag: 8d04df43-4f84-478c-91d4-7f7dd3d46ff0
+		summarizeBy: none
+		sourceColumn: Unit Cost
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Currency Code'
+		dataType: string
+		lineageTag: cff60b7e-2384-457e-a417-2842af0831ff
+		summarizeBy: none
+		sourceColumn: Currency Code
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Exchange Rate'
+		dataType: string
+		lineageTag: 6ebf99f0-707e-4057-9b43-8e338b2d9dfd
+		summarizeBy: none
+		sourceColumn: Exchange Rate
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Order Line Key'
+		dataType: string
+		lineageTag: 4ec6bf09-da6b-4b96-a64f-a072e8d79555
+		summarizeBy: none
+		sourceColumn: Order Line Key
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Customer Name'
+		dataType: string
+		lineageTag: e46a8fbf-b1ef-447c-930e-6d0926cdd50c
+		summarizeBy: none
+		sourceColumn: Customer Name
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Customer City'
+		dataType: string
+		lineageTag: 40cc0e18-bbd1-49e2-a188-4ea5fffa81c0
+		summarizeBy: none
+		sourceColumn: Customer City
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Customer State'
+		dataType: string
+		lineageTag: df82e64a-a56a-46f2-92c0-22de59c418c5
+		summarizeBy: none
+		sourceColumn: Customer State
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Customer Country'
+		dataType: string
+		lineageTag: 3906eaad-9820-41d7-ab0d-380ebe5fce2e
+		summarizeBy: none
+		sourceColumn: Customer Country
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Customer Continent'
+		dataType: string
+		lineageTag: 69854f5c-c865-4410-bc23-7bfd27689727
+		summarizeBy: none
+		sourceColumn: Customer Continent
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Product Name'
+		dataType: string
+		lineageTag: da56b080-0d0d-4141-b56b-9e417baefe95
+		summarizeBy: none
+		sourceColumn: Product Name
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column Brand
+		dataType: string
+		lineageTag: d8f2fefd-144f-40b8-8c13-a494a8621bf4
+		summarizeBy: none
+		sourceColumn: Brand
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column Category
+		dataType: string
+		lineageTag: 5a2e2df7-769e-42a4-a87f-7de2af101f6d
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column Subcategory
+		dataType: string
+		lineageTag: d75eaaa2-8b77-4df1-9644-045a52b43d4c
+		summarizeBy: none
+		sourceColumn: Subcategory
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Store Name'
+		dataType: string
+		lineageTag: 9c4a2619-f80c-4351-a274-7acd6198585e
+		summarizeBy: none
+		sourceColumn: Store Name
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Store Country'
+		dataType: string
+		lineageTag: 8c270bbc-22f9-4abc-9c3a-93760002e25f
+		summarizeBy: none
+		sourceColumn: Store Country
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Store State'
+		dataType: string
+		lineageTag: c32bd1f5-bb37-4f36-aac5-711a758115b6
+		summarizeBy: none
+		sourceColumn: Store State
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column Year
+		dataType: string
+		lineageTag: 2cd223c9-532f-4c29-b23c-5b4776637a55
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Year Month'
+		dataType: string
+		lineageTag: be3ad7de-1e58-42b2-a912-7e0893be83b7
+		summarizeBy: none
+		sourceColumn: Year Month
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column Month
+		dataType: string
+		lineageTag: 5a19dd6c-e7b7-4eb4-935f-e7100a25dc5e
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column 'Day of Week'
+		dataType: string
+		lineageTag: 184ca1e4-3b4d-49dc-bb0d-c11916e32291
+		summarizeBy: none
+		sourceColumn: Day of Week
+
+		annotation SummarizationSetBy = Automatic
+
+
+	partition 'Sales Flat' = m
+		mode: import
+		source =
+				let
+				    // ANTIPATTERN: flat table. Sales merged with every dimension in Power Query (no folding on Parquet) and loaded next to the star.
+				    Source = #"stg Sales",
+				    #"Merged Customer" = Table.NestedJoin(Source, {"CustomerKey"}, #"stg Customer", {"CustomerKey"}, "C", JoinKind.LeftOuter),
+				    #"Expanded Customer" = Table.ExpandTableColumn(#"Merged Customer", "C", {"GivenName", "Surname", "City", "StateFull", "CountryFull", "Continent"}, {"C.GivenName", "C.Surname", "Customer City", "Customer State", "Customer Country", "Customer Continent"}),
+				    #"Merged Product" = Table.NestedJoin(#"Expanded Customer", {"ProductKey"}, #"stg Product", {"ProductKey"}, "P", JoinKind.LeftOuter),
+				    #"Expanded Product" = Table.ExpandTableColumn(#"Merged Product", "P", {"ProductName", "Brand", "CategoryName", "SubCategoryName"}, {"Product Name", "Brand", "Category", "Subcategory"}),
+				    #"Merged Store" = Table.NestedJoin(#"Expanded Product", {"StoreKey"}, #"stg Store", {"StoreKey"}, "S", JoinKind.LeftOuter),
+				    #"Expanded Store" = Table.ExpandTableColumn(#"Merged Store", "S", {"Description", "CountryName", "State"}, {"Store Name", "Store Country", "Store State"}),
+				    #"Merged Date" = Table.NestedJoin(#"Expanded Store", {"OrderDate"}, #"stg Date", {"Date"}, "D", JoinKind.LeftOuter),
+				    #"Expanded Date" = Table.ExpandTableColumn(#"Merged Date", "D", {"Year", "YearMonth", "Month", "DayofWeek"}, {"Year", "Year Month", "Month", "Day of Week"}),
+				    #"Added Customer Name" = Table.AddColumn(#"Expanded Date", "Customer Name", each [C.GivenName] & " " & [C.Surname], type text),
+				    // ANTIPATTERN: concatenated text key, one distinct string per row
+				    #"Added Order Line Key" = Table.AddColumn(#"Added Customer Name", "Order Line Key", each [OrderKey] & "-" & [LineNumber], type text),
+				    #"Renamed Columns" = Table.RenameColumns(#"Added Order Line Key", {{"OrderKey", "Order Number"}, {"LineNumber", "Line Number"}, {"OrderDate", "Order Date"}, {"DeliveryDate", "Delivery Date"}, {"UnitPrice", "Unit Price"}, {"NetPrice", "Net Price"}, {"UnitCost", "Unit Cost"}, {"CurrencyCode", "Currency Code"}, {"ExchangeRate", "Exchange Rate"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"Order Number", "Line Number", "Order Date", "Delivery Date", "CustomerKey", "StoreKey", "ProductKey", "Quantity", "Unit Price", "Net Price", "Unit Cost", "Currency Code", "Exchange Rate", "Order Line Key", "Customer Name", "Customer City", "Customer State", "Customer Country", "Customer Continent", "Product Name", "Brand", "Category", "Subcategory", "Store Name", "Store Country", "Store State", "Year", "Year Month", "Month", "Day of Week"}),
+				    #"Sorted Rows" = Table.Sort(#"Selected Columns", {{"Customer Name", Order.Ascending}, {"Order Line Key", Order.Ascending}}),
+				    #"Buffered Rows" = Table.Buffer(#"Sorted Rows"),
+				    // ANTIPATTERN: only two columns get a real type. Keys, quantities, prices and the delivery date stay text.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Buffered Rows", {{"Order Number", Int64.Type}, {"Order Date", type datetime}}, "en-US")
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
