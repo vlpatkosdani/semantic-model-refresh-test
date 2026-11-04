@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v99f-calc-tables"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "eb1f3494-32a2-40f9-83ba-e8eab14496f1"
+  }
+}
