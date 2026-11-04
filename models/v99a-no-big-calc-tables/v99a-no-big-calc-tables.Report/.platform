@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v99a-no-big-calc-tables"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1e313510-f8dd-44e0-a44f-f684443f1c4e"
+  }
+}

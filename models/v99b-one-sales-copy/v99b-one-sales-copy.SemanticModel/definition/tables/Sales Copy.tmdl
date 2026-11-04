@@ -1,0 +1,23 @@
+table 'Sales Copy'
+	lineageTag: c43afd30-9c1e-490b-8c43-9ace1de15caa
+
+	partition 'Sales Copy' = calculated
+		mode: import
+		source =
+				// ANTIPATTERN: full copy of Sales, all columns including the calculated ones, plus RELATED columns.
+				// ===== KNOB: CopyCount = number of copies of the Sales rows. 1 copy = 2.35M rows on the 1M data. =====
+				// ===== Estimate per copy: +40 to 60 MB model size, +1.2 to 1.8 GB peak refresh memory.            =====
+				VAR CopyCount = 1   // diagnostic run B
+				RETURN
+				    GENERATE (
+				        ADDCOLUMNS (
+				            Sales,
+				            "Customer City", RELATED ( Customer[City] ),
+				            "Customer Continent", RELATED ( Customer[Continent] ),
+				            "Product Brand", RELATED ( 'Product'[Brand] ),
+				            "Product Subcategory", RELATED ( 'Product'[Subcategory] ),
+				            "Store Country", RELATED ( Store[Country] ),
+				            "Order Year", RELATED ( 'Date'[Year] )
+				        ),
+				        SELECTCOLUMNS ( GENERATESERIES ( 1, CopyCount ), "Copy Number", [Value] )
+				    )

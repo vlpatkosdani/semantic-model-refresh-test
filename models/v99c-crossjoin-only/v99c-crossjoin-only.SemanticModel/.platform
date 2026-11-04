@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v99c-crossjoin-only"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "cccefdb8-1a65-4d6e-aa0a-129115cf6686"
+  }
+}

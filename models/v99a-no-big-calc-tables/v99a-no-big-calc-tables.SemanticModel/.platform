@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v99a-no-big-calc-tables"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "06ae729b-12d9-44de-9537-3d2e7c0c5264"
+  }
+}

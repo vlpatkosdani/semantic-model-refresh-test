@@ -1,0 +1,133 @@
+/// Release tag of the data to load: data-1m-v1 or data-10m-v1
+expression DataTag = "data-1m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-1m-v1", Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 51a5e502-ea90-4d89-b63e-71f40e319111
+
+	annotation PBI_ResultType = Text
+
+/// Loads one Parquet file from the GitHub release named by DataTag.
+/// The base URL is a static literal and everything dynamic is in RelativePath,
+/// so the service can refresh it without a dynamic data source error.
+/// Timestamp columns arrive as UTC datetimezone; the zone is dropped so dates never shift.
+expression fnLoadParquet =
+		(FileName as text) as table =>
+		let
+		    Source = Parquet.Document(
+		        Binary.Buffer(
+		            Web.Contents(
+		                "https://github.com",
+		                [RelativePath = "vlpatkosdani/semantic-model-refresh-test/releases/download/" & DataTag & "/" & FileName]
+		            )
+		        )
+		    ),
+		    ZoneColumns = Table.SelectRows(Table.Schema(Source), each [Kind] = "datetimezone")[Name],
+		    RemovedZones = Table.TransformColumns(
+		        Source,
+		        List.Transform(ZoneColumns, (c) => {c, each if _ = null then null else DateTimeZone.RemoveZone(_), type datetime})
+		    )
+		in
+		    RemovedZones
+	lineageTag: 0d6f3c1e-8a52-4b7e-9c41-2f5b8e7a9d10
+
+	annotation PBI_ResultType = Function
+
+expression 'stg Sales' =
+		let
+		    Source = fnLoadParquet("sales.parquet"),
+		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
+		in
+		    #"All Text"
+	lineageTag: ecede492-3a3f-45d1-9a41-98d4bdc04aeb
+
+	annotation PBI_ResultType = Table
+
+expression 'stg Customer' =
+		let
+		    Source = fnLoadParquet("customer.parquet"),
+		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
+		in
+		    #"All Text"
+	lineageTag: ecd24daf-fa9b-44f5-8268-ff06319806e7
+
+	annotation PBI_ResultType = Table
+
+/// Staging, not loaded. Referenced by several loaded queries.
+expression 'stg Product' =
+		let
+		    Source = fnLoadParquet("product.parquet"),
+		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
+		in
+		    #"All Text"
+	lineageTag: 1bb926f3-d2a1-409a-815a-2748b0446259
+
+	annotation PBI_ResultType = Table
+
+/// Staging, not loaded. Referenced by several loaded queries.
+expression 'stg Store' =
+		let
+		    Source = fnLoadParquet("store.parquet"),
+		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
+		in
+		    #"All Text"
+	lineageTag: 3631bc6a-620b-465c-99fe-66b5c79f792f
+
+	annotation PBI_ResultType = Table
+
+/// Staging, not loaded. Referenced by several loaded queries.
+expression 'stg Date' =
+		let
+		    Source = fnLoadParquet("date.parquet"),
+		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
+		in
+		    #"All Text"
+	lineageTag: fbe39073-b4e0-4473-abe3-69a791e1da0d
+
+	annotation PBI_ResultType = Table
+
+expression 'Unused Heavy Query' =
+		let
+		    /*Rows = fnLoadParquet("orderrows.parquet"),
+		    Orders = fnLoadParquet("orders.parquet"),
+		    Merged = Table.NestedJoin(Rows, {"OrderKey"}, Orders, {"OrderKey"}, "Order", JoinKind.Inner),
+		    Expanded = Table.ExpandTableColumn(Merged, "Order", {"CustomerKey", "StoreKey", "DT", "CurrencyCode"}),
+		    Sorted = Table.Sort(Expanded, {{"NetPrice", Order.Descending}, {"OrderKey", Order.Ascending}}),
+		    Buffered = Table.Buffer(Sorted),
+		    Grouped = Table.Group(Buffered, {"CustomerKey", "StoreKey"}, {{"Lines", each Table.RowCount(_), Int64.Type}, {"Net Price", each List.Sum([NetPrice]), type number}})*/
+		    Grouped = 1
+		in
+		    Grouped
+	lineageTag: ad083aed-c967-4a2d-8518-177c388d5c5a
+
+	annotation PBI_ResultType = Table
+
+expression 'Sales Flat' =
+		let
+		    // ANTIPATTERN: flat table. Sales merged with every dimension in Power Query (no folding on Parquet) and loaded next to the star.
+		    Source = #"stg Sales",
+		    #"Merged Customer" = Table.NestedJoin(Source, {"CustomerKey"}, #"stg Customer", {"CustomerKey"}, "C", JoinKind.LeftOuter),
+		    #"Expanded Customer" = Table.ExpandTableColumn(#"Merged Customer", "C", {"GivenName", "Surname", "City", "StateFull", "CountryFull", "Continent"}, {"C.GivenName", "C.Surname", "Customer City", "Customer State", "Customer Country", "Customer Continent"}),
+		    #"Merged Product" = Table.NestedJoin(#"Expanded Customer", {"ProductKey"}, #"stg Product", {"ProductKey"}, "P", JoinKind.LeftOuter),
+		    #"Expanded Product" = Table.ExpandTableColumn(#"Merged Product", "P", {"ProductName", "Brand", "CategoryName", "SubCategoryName"}, {"Product Name", "Brand", "Category", "Subcategory"}),
+		    #"Merged Store" = Table.NestedJoin(#"Expanded Product", {"StoreKey"}, #"stg Store", {"StoreKey"}, "S", JoinKind.LeftOuter),
+		    #"Expanded Store" = Table.ExpandTableColumn(#"Merged Store", "S", {"Description", "CountryName", "State"}, {"Store Name", "Store Country", "Store State"}),
+		    #"Merged Date" = Table.NestedJoin(#"Expanded Store", {"OrderDate"}, #"stg Date", {"Date"}, "D", JoinKind.LeftOuter),
+		    #"Expanded Date" = Table.ExpandTableColumn(#"Merged Date", "D", {"Year", "YearMonth", "Month", "DayofWeek"}, {"Year", "Year Month", "Month", "Day of Week"}),
+		    #"Added Customer Name" = Table.AddColumn(#"Expanded Date", "Customer Name", each [C.GivenName] & " " & [C.Surname], type text),
+		    // ANTIPATTERN: concatenated text key, one distinct string per row
+		    #"Added Order Line Key" = Table.AddColumn(#"Added Customer Name", "Order Line Key", each [OrderKey] & "-" & [LineNumber], type text),
+		    #"Renamed Columns" = Table.RenameColumns(#"Added Order Line Key", {{"OrderKey", "Order Number"}, {"LineNumber", "Line Number"}, {"OrderDate", "Order Date"}, {"DeliveryDate", "Delivery Date"}, {"UnitPrice", "Unit Price"}, {"NetPrice", "Net Price"}, {"UnitCost", "Unit Cost"}, {"CurrencyCode", "Currency Code"}, {"ExchangeRate", "Exchange Rate"}}),
+		    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"Order Number", "Line Number", "Order Date", "Delivery Date", "CustomerKey", "StoreKey", "ProductKey", "Quantity", "Unit Price", "Net Price", "Unit Cost", "Currency Code", "Exchange Rate", "Order Line Key", "Customer Name", "Customer City", "Customer State", "Customer Country", "Customer Continent", "Product Name", "Brand", "Category", "Subcategory", "Store Name", "Store Country", "Store State", "Year", "Year Month", "Month", "Day of Week"}),
+		    #"Sorted Rows" = Table.Sort(#"Selected Columns", {{"Customer Name", Order.Ascending}, {"Order Line Key", Order.Ascending}}),
+		    #"Buffered Rows" = Table.Buffer(#"Sorted Rows"),
+		    // ANTIPATTERN: only two columns get a real type. Keys, quantities, prices and the delivery date stay text.
+		    #"Changed Type" = Table.TransformColumnTypes(#"Buffered Rows", {{"Order Number", Int64.Type}, {"Order Date", type datetime}}, "en-US")
+		in
+		    #"Changed Type"
+	lineageTag: 7dbb2925-d517-4198-9ffa-2b46db390efe
+
+	annotation PBI_ResultType = Exception
+

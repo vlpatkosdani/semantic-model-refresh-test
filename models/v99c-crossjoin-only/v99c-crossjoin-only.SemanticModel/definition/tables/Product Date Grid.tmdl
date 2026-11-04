@@ -1,0 +1,14 @@
+table 'Product Date Grid'
+	lineageTag: 2f3bd84d-56b6-4c9a-9f1c-4f98a2d1a833
+
+	partition 'Product Date Grid' = calculated
+		mode: import
+		source =
+				// ANTIPATTERN: CROSSJOIN of Product and Date. 2,517 products x 4,018 days = 10.1M rows.
+				// ===== KNOB: FirstYear trims the date range. 2016 keeps all 11 years, 2021 keeps about half the rows.         =====
+				// ===== Do NOT add Store or Customer to the crossjoin: x74 stores = 750M rows, which fails on any capacity. =====
+				VAR FirstYear = 2016
+				VAR ProductRows = SELECTCOLUMNS ( 'Product', "ProductKey", 'Product'[ProductKey], "Category", 'Product'[Category] )
+				VAR DateRows = SELECTCOLUMNS ( FILTER ( 'Date', 'Date'[Year] >= FirstYear ), "Day", 'Date'[Date] )
+				RETURN
+				    CROSSJOIN ( ProductRows, DateRows )

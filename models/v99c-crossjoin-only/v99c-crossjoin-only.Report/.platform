@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v99c-crossjoin-only"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "6347fc7a-fc2f-4952-b670-5b7391858a13"
+  }
+}

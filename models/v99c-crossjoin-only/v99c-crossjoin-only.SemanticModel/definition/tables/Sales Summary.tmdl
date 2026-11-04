@@ -1,0 +1,16 @@
+table 'Sales Summary'
+	lineageTag: 82bcbcd9-95ea-4d84-9828-aee6fd4f3b08
+
+	partition 'Sales Summary' = calculated
+		mode: import
+		source =
+				// ANTIPATTERN: summary of Sales as a calculated table. Roughly 1M rows on the 1M data.
+				// ===== KNOB: grain. Replacing 'Date'[Year] with 'Date'[Year Month] roughly doubles the rows. =====
+				SUMMARIZECOLUMNS (
+				    Customer[CustomerKey],
+				    'Date'[Year],
+				    'Product'[Category],
+				    "Sales Amount", [Sales Amount],
+				    "Quantity", [Total Quantity],
+				    "Orders", [# Orders]
+				)
