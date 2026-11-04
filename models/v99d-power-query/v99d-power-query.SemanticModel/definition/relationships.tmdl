@@ -51,8 +51,3 @@ relationship 55fa90e1-00c5-4666-8bc8-dde516c69228
 	fromColumn: Store.'Close Date'
 	toColumn: LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Date
 
-relationship fb1bf910-900a-4c5c-b4f4-d22153448d7f
-	joinOnDateBehavior: datePartOnly
-	fromColumn: 'Sales Flat'.'Order Date'
-	toColumn: LocalDateTable_b2dcf6fb-acec-4e4b-a9f9-06281b161f23.Date
-

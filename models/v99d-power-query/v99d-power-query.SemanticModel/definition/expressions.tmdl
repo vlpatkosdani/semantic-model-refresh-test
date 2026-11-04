@@ -34,11 +34,9 @@ expression 'stg Sales' =
 		let
 		    Source = fnLoadParquet("sales.parquet"),
 		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
-		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US"),
-		    // ANTIPATTERN: buffering here does not help; each loaded query that references this one evaluates it again
-		    #"Buffered" = Table.Buffer(#"All Text")
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
 		in
-		    #"Buffered"
+		    #"All Text"
 	lineageTag: ecede492-3a3f-45d1-9a41-98d4bdc04aeb
 
 	annotation PBI_ResultType = Table
@@ -47,11 +45,9 @@ expression 'stg Customer' =
 		let
 		    Source = fnLoadParquet("customer.parquet"),
 		    // ANTIPATTERN: every column, numbers and dates included, is turned into text
-		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US"),
-		    // ANTIPATTERN: buffering here does not help; each loaded query that references this one evaluates it again
-		    #"Buffered" = Table.Buffer(#"All Text")
+		    #"All Text" = Table.TransformColumnTypes(Source, List.Transform(Table.ColumnNames(Source), each {_, type text}), "en-US")
 		in
-		    #"Buffered"
+		    #"All Text"
 	lineageTag: ecd24daf-fa9b-44f5-8268-ff06319806e7
 
 	annotation PBI_ResultType = Table
@@ -104,6 +100,33 @@ expression 'Unused Heavy Query' =
 		in
 		    Grouped
 	lineageTag: ad083aed-c967-4a2d-8518-177c388d5c5a
+
+	annotation PBI_ResultType = Table
+
+expression 'Sales Flat' =
+		let
+		    // ANTIPATTERN: flat table. Sales merged with every dimension in Power Query (no folding on Parquet) and loaded next to the star.
+		    Source = #"stg Sales",
+		    #"Merged Customer" = Table.NestedJoin(Source, {"CustomerKey"}, #"stg Customer", {"CustomerKey"}, "C", JoinKind.LeftOuter),
+		    #"Expanded Customer" = Table.ExpandTableColumn(#"Merged Customer", "C", {"GivenName", "Surname", "City", "StateFull", "CountryFull", "Continent"}, {"C.GivenName", "C.Surname", "Customer City", "Customer State", "Customer Country", "Customer Continent"}),
+		    #"Merged Product" = Table.NestedJoin(#"Expanded Customer", {"ProductKey"}, #"stg Product", {"ProductKey"}, "P", JoinKind.LeftOuter),
+		    #"Expanded Product" = Table.ExpandTableColumn(#"Merged Product", "P", {"ProductName", "Brand", "CategoryName", "SubCategoryName"}, {"Product Name", "Brand", "Category", "Subcategory"}),
+		    #"Merged Store" = Table.NestedJoin(#"Expanded Product", {"StoreKey"}, #"stg Store", {"StoreKey"}, "S", JoinKind.LeftOuter),
+		    #"Expanded Store" = Table.ExpandTableColumn(#"Merged Store", "S", {"Description", "CountryName", "State"}, {"Store Name", "Store Country", "Store State"}),
+		    #"Merged Date" = Table.NestedJoin(#"Expanded Store", {"OrderDate"}, #"stg Date", {"Date"}, "D", JoinKind.LeftOuter),
+		    #"Expanded Date" = Table.ExpandTableColumn(#"Merged Date", "D", {"Year", "YearMonth", "Month", "DayofWeek"}, {"Year", "Year Month", "Month", "Day of Week"}),
+		    #"Added Customer Name" = Table.AddColumn(#"Expanded Date", "Customer Name", each [C.GivenName] & " " & [C.Surname], type text),
+		    // ANTIPATTERN: concatenated text key, one distinct string per row
+		    #"Added Order Line Key" = Table.AddColumn(#"Added Customer Name", "Order Line Key", each [OrderKey] & "-" & [LineNumber], type text),
+		    #"Renamed Columns" = Table.RenameColumns(#"Added Order Line Key", {{"OrderKey", "Order Number"}, {"LineNumber", "Line Number"}, {"OrderDate", "Order Date"}, {"DeliveryDate", "Delivery Date"}, {"UnitPrice", "Unit Price"}, {"NetPrice", "Net Price"}, {"UnitCost", "Unit Cost"}, {"CurrencyCode", "Currency Code"}, {"ExchangeRate", "Exchange Rate"}}),
+		    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"Order Number", "Line Number", "Order Date", "Delivery Date", "CustomerKey", "StoreKey", "ProductKey", "Quantity", "Unit Price", "Net Price", "Unit Cost", "Currency Code", "Exchange Rate", "Order Line Key", "Customer Name", "Customer City", "Customer State", "Customer Country", "Customer Continent", "Product Name", "Brand", "Category", "Subcategory", "Store Name", "Store Country", "Store State", "Year", "Year Month", "Month", "Day of Week"}),
+		    #"Sorted Rows" = Table.Sort(#"Selected Columns", {{"Customer Name", Order.Ascending}, {"Order Line Key", Order.Ascending}}),
+		    #"Buffered Rows" = Table.Buffer(#"Sorted Rows"),
+		    // ANTIPATTERN: only two columns get a real type. Keys, quantities, prices and the delivery date stay text.
+		    #"Changed Type" = Table.TransformColumnTypes(#"Buffered Rows", {{"Order Number", Int64.Type}, {"Order Date", type datetime}}, "en-US")
+		in
+		    #"Changed Type"
+	lineageTag: 7dbb2925-d517-4198-9ffa-2b46db390efe
 
 	annotation PBI_ResultType = Table
 
