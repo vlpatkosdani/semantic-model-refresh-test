@@ -1,0 +1,81 @@
+table 'PQ Customer Segments'
+	lineageTag: 6aabd9da-96df-4739-b7cb-adcf092dce50
+
+	column Country
+		dataType: string
+		lineageTag: c34b290b-6f44-4e68-ab2a-9f2fdf745344
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Gender
+		dataType: string
+		lineageTag: 2f57c808-9a9b-4fee-ad86-69f9e7330cf6
+		summarizeBy: none
+		sourceColumn: Gender
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Age Band'
+		dataType: string
+		lineageTag: b9383e62-60d0-4646-9a9e-749e6a7dc293
+		summarizeBy: none
+		sourceColumn: Age Band
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: #,0
+		lineageTag: 9dca50b8-44ae-478b-9d88-085ca90e5734
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Amount'
+		dataType: double
+		formatString: #,0.00
+		lineageTag: ebf8062a-73d3-4cd3-92f9-154f57fb1c1c
+		summarizeBy: none
+		sourceColumn: Sales Amount
+
+		annotation SummarizationSetBy = Automatic
+
+	column Customers
+		dataType: int64
+		formatString: #,0
+		lineageTag: d78f7c51-8d4e-4702-aff2-520568644464
+		summarizeBy: none
+		sourceColumn: Customers
+
+		annotation SummarizationSetBy = Automatic
+
+	column Orders
+		dataType: int64
+		formatString: #,0
+		lineageTag: d8ac49a4-6bbb-4c90-93af-df80c915d820
+		summarizeBy: none
+		sourceColumn: Orders
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'PQ Customer Segments' = m
+		mode: import
+		source =
+				let
+				    // Merge every sales line with its customer, then group with distinct counts
+				    Source = #"src Sales Heavy",
+				    #"Merged Customer" = Table.NestedJoin(Source, {"CustomerKey"}, #"src Customer Heavy", {"CustomerKey"}, "C", JoinKind.LeftOuter),
+				    #"Expanded Customer" = Table.ExpandTableColumn(#"Merged Customer", "C", {"Gender", "CountryFull", "Age"}, {"Gender", "Country", "Age"}),
+				    #"Added Age Band" = Table.AddColumn(#"Expanded Customer", "Age Band", each if [Age] = null then "Unknown" else Text.From(Number.IntegerDivide([Age], 10) * 10) & "s", type text),
+				    #"Added Year" = Table.AddColumn(#"Added Age Band", "Year", each Date.Year([OrderDate]), Int64.Type),
+				    #"Grouped Rows" = Table.Group(#"Added Year", {"Country", "Gender", "Age Band", "Year"}, {
+				        {"Sales Amount", each List.Sum([Amount]), type number},
+				        {"Customers", each List.Count(List.Distinct([CustomerKey])), Int64.Type},
+				        {"Orders", each List.Count(List.Distinct([OrderKey])), Int64.Type}})
+				in
+				    #"Grouped Rows"
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,57 @@
+table 'PQ Delivery Days'
+	lineageTag: de76848e-d1ad-4133-88ff-5ffb77758579
+
+	column StoreKey
+		dataType: int64
+		formatString: #,0
+		lineageTag: a44c33e7-8aa8-4705-92e8-a0422fe8978c
+		summarizeBy: none
+		sourceColumn: StoreKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Delivery Days'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 12864c44-28c9-4bbf-bb98-ae8d9a1b979c
+		summarizeBy: none
+		sourceColumn: Delivery Days
+
+		annotation SummarizationSetBy = Automatic
+
+	column Lines
+		dataType: int64
+		formatString: #,0
+		lineageTag: 83a37e28-828b-4de1-b78e-50427c3995c1
+		summarizeBy: none
+		sourceColumn: Lines
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Net Amount'
+		dataType: double
+		formatString: #,0.00
+		lineageTag: dd7481d1-0c39-4bc2-a3f2-0ff049526276
+		summarizeBy: none
+		sourceColumn: Net Amount
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'PQ Delivery Days' = m
+		mode: import
+		source =
+				let
+				    // Join every order line with its order header (23.5M x 9.8M on 10M), then group by store and delivery time
+				    Source = #"src OrderRows Heavy",
+				    #"Merged Orders" = Table.NestedJoin(Source, {"OrderKey"}, #"src Orders Heavy", {"OrderKey"}, "O", JoinKind.Inner),
+				    #"Expanded Orders" = Table.ExpandTableColumn(#"Merged Orders", "O", {"StoreKey", "DT", "DeliveryDate"}),
+				    #"Added Delivery Days" = Table.AddColumn(#"Expanded Orders", "Delivery Days", each Duration.Days([DeliveryDate] - [DT]), Int64.Type),
+				    #"Added Amount" = Table.AddColumn(#"Added Delivery Days", "Amount", each [Quantity] * [NetPrice], type number),
+				    #"Grouped Rows" = Table.Group(#"Added Amount", {"StoreKey", "Delivery Days"}, {
+				        {"Lines", each Table.RowCount(_), Int64.Type},
+				        {"Net Amount", each List.Sum([Amount]), type number}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Grouped Rows", {{"StoreKey", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table

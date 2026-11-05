@@ -79,11 +79,22 @@ The `Customer Lifetime Sales` column uses `ALLEXCEPT ( Sales, Sales[CustomerKey]
 2. Auto date/time: the model annotation is set to on, but TMDL cannot reliably create the hidden `LocalDateTable_*` tables. Go to File, Options and settings, Options, Current file, Data load, Time intelligence. Turn Auto date/time off and on again, then check that `LocalDateTable_*` tables appear in the TMDL folder after saving.
 3. Save, then publish.
 
+## Results
+
+| Capacity | Result | Details |
+|---|---|---|
+| Pro (shared) | refreshed | downloaded .pbix 458,321 KB |
+| F2 | failed | cancelled at 3,319 MB, limit 3,065 MB |
+| F64 | failed | cancelled at 25,599 MB, limit 25,593 MB |
+
+The same model refreshes on Pro and fails on F64. Pro does not behave like a small Fabric capacity: the per-model memory governance that cancels the refresh on F SKUs did not stop it on shared capacity.
+
 ## Measured so far
 
 The estimates above were wrong in one important place. The diagnostic runs v99a to v99j split v99 into parts and refreshed them on F64:
 
 - Every calculated table, the flat table and all calculated columns refresh together on F64 (v99g).
 - Adding `Table.Buffer` to the not-loaded staging queries `stg Sales` and `stg Customer` makes the same model fail at over 25.6 GB (v99h).
+- Splitting the two buffers: `stg Customer` alone refreshes (v99j), `stg Sales` alone fails at over 25.6 GB (v99i).
 
-So the biggest single cause of v99's refresh memory is two `Table.Buffer` steps in queries that are never loaded. See the README of each diagnostic run for the full results table.
+So the biggest single cause of v99's refresh memory is one `Table.Buffer` step at the end of `stg Sales`, a staging query that is never loaded. It holds all 2.35M Sales rows with every column as text, and three loaded queries reference it (`Sales`, `Sales Flat`, `Customer Stats`). See the README of each diagnostic run for the full results table.

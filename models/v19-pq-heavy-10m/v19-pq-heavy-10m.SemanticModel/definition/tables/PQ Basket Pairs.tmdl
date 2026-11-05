@@ -1,0 +1,46 @@
+table 'PQ Basket Pairs'
+	lineageTag: 5a13fc57-d6d1-404b-822b-82b758280c85
+
+	column Subcategory
+		dataType: string
+		lineageTag: a7a4c882-f507-41be-b0f9-1e939952640a
+		summarizeBy: none
+		sourceColumn: Subcategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Other Subcategory'
+		dataType: string
+		lineageTag: e569abcb-63ec-45ba-8abb-203088f5d14e
+		summarizeBy: none
+		sourceColumn: Other Subcategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column Pairs
+		dataType: int64
+		formatString: #,0
+		lineageTag: 0ca846f7-4f9b-4744-9104-c6acbc050046
+		summarizeBy: none
+		sourceColumn: Pairs
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'PQ Basket Pairs' = m
+		mode: import
+		source =
+				let
+				    // Market basket: every pair of products bought in the same order, counted per subcategory pair.
+				    // KNOB: BasketDataTag. The self-join produces about 78M rows on 10M, 7.8M on 1M.
+				    Lines = Table.SelectColumns(fnLoadParquet("orderrows.parquet", BasketDataTag), {"OrderKey", "ProductKey"}),
+				    Products = Table.SelectColumns(fnLoadParquet("product.parquet", BasketDataTag), {"ProductKey", "SubCategoryName"}),
+				    #"Merged Product" = Table.NestedJoin(Lines, {"ProductKey"}, Products, {"ProductKey"}, "P", JoinKind.LeftOuter),
+				    #"With Subcategory" = Table.ExpandTableColumn(#"Merged Product", "P", {"SubCategoryName"}, {"Subcategory"}),
+				    #"Self Join" = Table.NestedJoin(#"With Subcategory", {"OrderKey"}, #"With Subcategory", {"OrderKey"}, "Other", JoinKind.Inner),
+				    #"Expanded Other" = Table.ExpandTableColumn(#"Self Join", "Other", {"ProductKey", "Subcategory"}, {"Other ProductKey", "Other Subcategory"}),
+				    #"Kept Pairs" = Table.SelectRows(#"Expanded Other", each [ProductKey] < [Other ProductKey]),
+				    #"Grouped Rows" = Table.Group(#"Kept Pairs", {"Subcategory", "Other Subcategory"}, {{"Pairs", each Table.RowCount(_), Int64.Type}})
+				in
+				    #"Grouped Rows"
+
+	annotation PBI_ResultType = Table

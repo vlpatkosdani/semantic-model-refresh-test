@@ -1,0 +1,99 @@
+/// Release tag of the data to load: data-1m-v1 or data-10m-v1
+expression DataTag = "data-1m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-1m-v1", Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 51a5e502-ea90-4d89-b63e-71f40e319111
+
+	annotation PBI_ResultType = Text
+
+/// Loads one Parquet file from the GitHub release named by Tag, or by DataTag when Tag is omitted.
+/// The base URL is a static literal and everything dynamic is in RelativePath,
+/// so the service can refresh it without a dynamic data source error.
+/// Timestamp columns arrive as UTC datetimezone; the zone is dropped so dates never shift.
+/// This variant has no Binary.Buffer: Parquet.Document reads the web response directly.
+expression fnLoadParquet =
+		(FileName as text, optional Tag as nullable text) as table =>
+		let
+		    Source = Parquet.Document(
+		        Web.Contents(
+		            "https://github.com",
+		            [RelativePath = "vlpatkosdani/semantic-model-refresh-test/releases/download/" & (if Tag = null then DataTag else Tag) & "/" & FileName]
+		        )
+		    ),
+		    ZoneColumns = Table.SelectRows(Table.Schema(Source), each [Kind] = "datetimezone")[Name],
+		    RemovedZones = Table.TransformColumns(
+		        Source,
+		        List.Transform(ZoneColumns, (c) => {c, each if _ = null then null else DateTimeZone.RemoveZone(_), type datetime})
+		    )
+		in
+		    RemovedZones
+	lineageTag: 0d6f3c1e-8a52-4b7e-9c41-2f5b8e7a9d10
+
+	annotation PBI_ResultType = Function
+
+/// KNOB: release for the heavy analysis queries (all except the basket analysis)
+expression HeavyDataTag = "data-10m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-10m-v1", Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 033856c2-68fc-4403-a1bd-f2fc89baf857
+
+	annotation PBI_ResultType = Text
+
+/// KNOB: release for the basket analysis (self-join of order rows, about 78M pairs on 10M)
+expression BasketDataTag = "data-10m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-10m-v1", Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 353b237a-9205-4ea3-98ea-0e0d5c51ffdf
+
+	annotation PBI_ResultType = Text
+
+/// Not loaded. All Sales lines of the HeavyDataTag release (23.5M on 10M).
+expression 'src Sales Heavy' =
+		let
+		    Source = fnLoadParquet("sales.parquet", HeavyDataTag),
+		    #"Selected Columns" = Table.SelectColumns(Source, {"OrderKey", "OrderDate", "CustomerKey", "StoreKey", "ProductKey", "Quantity", "NetPrice"}),
+		    #"Added Amount" = Table.AddColumn(#"Selected Columns", "Amount", each [Quantity] * [NetPrice], type number)
+		in
+		    #"Added Amount"
+	lineageTag: ddc01d15-7a00-4dd2-98b0-14c4f62ae866
+
+	annotation PBI_ResultType = Table
+
+/// Not loaded. All customers of the HeavyDataTag release.
+expression 'src Customer Heavy' =
+		let
+		    Source = fnLoadParquet("customer.parquet", HeavyDataTag),
+		    #"Selected Columns" = Table.SelectColumns(Source, {"CustomerKey", "Gender", "CountryFull", "Age"})
+		in
+		    #"Selected Columns"
+	lineageTag: 5cfaa56c-850c-4a92-887e-2947464c79e5
+
+	annotation PBI_ResultType = Table
+
+/// Not loaded. Products of the HeavyDataTag release.
+expression 'src Product Heavy' =
+		let
+		    Source = fnLoadParquet("product.parquet", HeavyDataTag),
+		    #"Selected Columns" = Table.SelectColumns(Source, {"ProductKey", "ProductName", "SubCategoryName"})
+		in
+		    #"Selected Columns"
+	lineageTag: 70b5354d-102f-4108-ab4a-f0943524897a
+
+	annotation PBI_ResultType = Table
+
+/// Not loaded. Order headers of the HeavyDataTag release (9.8M on 10M).
+expression 'src Orders Heavy' =
+		let
+		    Source = fnLoadParquet("orders.parquet", HeavyDataTag),
+		    #"Selected Columns" = Table.SelectColumns(Source, {"OrderKey", "StoreKey", "DT", "DeliveryDate"})
+		in
+		    #"Selected Columns"
+	lineageTag: 3524cbd3-e4b6-4566-b798-33ae9ce0d6fc
+
+	annotation PBI_ResultType = Table
+
+/// Not loaded. Order lines of the HeavyDataTag release (23.5M on 10M).
+expression 'src OrderRows Heavy' =
+		let
+		    Source = fnLoadParquet("orderrows.parquet", HeavyDataTag),
+		    #"Selected Columns" = Table.SelectColumns(Source, {"OrderKey", "ProductKey", "Quantity", "NetPrice"})
+		in
+		    #"Selected Columns"
+	lineageTag: 812cadd5-ff34-4f00-9173-dd1bf65adf45
+
+	annotation PBI_ResultType = Table
+

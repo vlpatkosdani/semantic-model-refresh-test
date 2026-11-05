@@ -20,8 +20,8 @@ v99h (v99g plus `Table.Buffer` in both `stg Sales` and `stg Customer`) failed on
 | v99f | v99e plus `Sales Summary`, `Product Date Grid`, `Calendar Auto` | refreshed |
 | v99g | v99f plus `Sales Copy`, one copy | refreshed |
 | v99h | v99g plus `Table.Buffer` in `stg Sales` and `stg Customer` | failed, cancelled at 25,603 MB |
-| v99i | v99g plus `Table.Buffer` in `stg Sales` only | not run yet |
-| v99j | v99g plus `Table.Buffer` in `stg Customer` only | not run yet |
+| v99i | v99g plus `Table.Buffer` in `stg Sales` only | failed, cancelled at 25,604 MB |
+| v99j | v99g plus `Table.Buffer` in `stg Customer` only | refreshed |
 
 ## How to read the result
 

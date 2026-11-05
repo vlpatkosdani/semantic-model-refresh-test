@@ -26,3 +26,10 @@ The v99 diagnostic runs suggest that Power Query memory counts against the seman
 - Compare `approximatePeakMemConsumptionKB` and `mEnginePeakMemoryKB` with the baseline run.
 - If it fails on F2 while the baseline refreshes there, a table of 740 rows is enough to push a model off the smallest capacity.
 - Setting `SummaryDataTag` to `data-1m-v1` gives the same model on a 10 times smaller source, which shows how the cost scales.
+
+## Results
+
+| Capacity | Data | Result | Peak memory | Duration | CU |
+|---|---|---|---|---|---|
+| F64 | star 1M, summary 10M | refreshed | not read yet | not read yet | not read yet |
+| F2 | star 1M, summary 10M | not run yet | | | |

@@ -1,0 +1,82 @@
+table 'PQ Customer RFM'
+	lineageTag: 7f6d8757-3687-43f8-a12d-293812f41af5
+
+	column 'RFM Segment'
+		dataType: string
+		lineageTag: 29ab5b95-7adc-45f2-b16b-4415fb76b996
+		summarizeBy: none
+		sourceColumn: RFM Segment
+
+		annotation SummarizationSetBy = Automatic
+
+	column R
+		dataType: int64
+		formatString: #,0
+		lineageTag: 0f9679a1-b9bc-46b8-8a79-75aef7bf02b9
+		summarizeBy: none
+		sourceColumn: R
+
+		annotation SummarizationSetBy = Automatic
+
+	column F
+		dataType: int64
+		formatString: #,0
+		lineageTag: 2f4bb957-d7ea-474b-8373-bb0cf19c6c72
+		summarizeBy: none
+		sourceColumn: F
+
+		annotation SummarizationSetBy = Automatic
+
+	column M
+		dataType: int64
+		formatString: #,0
+		lineageTag: 4eddcaae-32a4-44f8-840d-83e8330b7246
+		summarizeBy: none
+		sourceColumn: M
+
+		annotation SummarizationSetBy = Automatic
+
+	column Customers
+		dataType: int64
+		formatString: #,0
+		lineageTag: 1c3da7a3-d850-4373-bc53-0c5790204586
+		summarizeBy: none
+		sourceColumn: Customers
+
+		annotation SummarizationSetBy = Automatic
+
+	column Monetary
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 503a71b8-f3ae-4b39-90e1-821e122c61c5
+		summarizeBy: none
+		sourceColumn: Monetary
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'PQ Customer RFM' = m
+		mode: import
+		source =
+				let
+				    // Recency, frequency, monetary per customer, ranked into quintiles, summarised per RFM segment
+				    Source = #"src Sales Heavy",
+				    #"Per Customer" = Table.Group(Source, {"CustomerKey"}, {
+				        {"Last Order", each List.Max([OrderDate]), type datetime},
+				        {"Frequency", each List.Count(List.Distinct([OrderKey])), Int64.Type},
+				        {"Monetary", each List.Sum([Amount]), type number}}),
+				    // Counting the customers evaluates the whole grouping a second time
+				    CustomerCount = Table.RowCount(#"Per Customer"),
+				    #"Ranked R" = Table.AddRankColumn(#"Per Customer", "R Rank", {"Last Order", Order.Descending}),
+				    #"Ranked F" = Table.AddRankColumn(#"Ranked R", "F Rank", {"Frequency", Order.Descending}),
+				    #"Ranked M" = Table.AddRankColumn(#"Ranked F", "M Rank", {"Monetary", Order.Descending}),
+				    #"Added R" = Table.AddColumn(#"Ranked M", "R", each 5 - Number.IntegerDivide(([R Rank] - 1) * 5, CustomerCount), Int64.Type),
+				    #"Added F" = Table.AddColumn(#"Added R", "F", each 5 - Number.IntegerDivide(([F Rank] - 1) * 5, CustomerCount), Int64.Type),
+				    #"Added M" = Table.AddColumn(#"Added F", "M", each 5 - Number.IntegerDivide(([M Rank] - 1) * 5, CustomerCount), Int64.Type),
+				    #"Added Segment" = Table.AddColumn(#"Added M", "RFM Segment", each Text.From([R]) & Text.From([F]) & Text.From([M]), type text),
+				    #"Grouped Rows" = Table.Group(#"Added Segment", {"RFM Segment", "R", "F", "M"}, {
+				        {"Customers", each Table.RowCount(_), Int64.Type},
+				        {"Monetary", each List.Sum([Monetary]), type number}})
+				in
+				    #"Grouped Rows"
+
+	annotation PBI_ResultType = Table

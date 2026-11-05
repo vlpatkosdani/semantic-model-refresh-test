@@ -1,0 +1,57 @@
+table 'PQ Top Products by Year'
+	lineageTag: bc1a61cc-206a-46b5-ae88-f332649c6074
+
+	column Year
+		dataType: int64
+		formatString: #,0
+		lineageTag: d0e3f5ed-3da1-4291-b79b-089a4199788f
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductKey
+		dataType: int64
+		formatString: #,0
+		lineageTag: bc8744e5-a01f-453b-977f-9d85836f9c20
+		summarizeBy: none
+		sourceColumn: ProductKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Product Name'
+		dataType: string
+		lineageTag: 32e80005-d309-48e3-a1f9-098f7dbd53f2
+		summarizeBy: none
+		sourceColumn: Product Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Amount'
+		dataType: double
+		formatString: #,0.00
+		lineageTag: a4963e13-96fd-4784-9cc7-cd0888491001
+		summarizeBy: none
+		sourceColumn: Sales Amount
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'PQ Top Products by Year' = m
+		mode: import
+		source =
+				let
+				    // Sales per year and product, then the top 10 products of each year
+				    Source = #"src Sales Heavy",
+				    #"Added Year" = Table.AddColumn(Source, "Year", each Date.Year([OrderDate]), Int64.Type),
+				    #"Per Year Product" = Table.Group(#"Added Year", {"Year", "ProductKey"}, {{"Sales Amount", each List.Sum([Amount]), type number}}),
+				    #"Top 10 Per Year" = Table.Group(#"Per Year Product", {"Year"}, {
+				        {"Top", each Table.FirstN(Table.Sort(Table.SelectColumns(_, {"ProductKey", "Sales Amount"}), {{"Sales Amount", Order.Descending}}), 10),
+				            type table [ProductKey = Int64.Type, #"Sales Amount" = number]}}),
+				    #"Expanded Top" = Table.ExpandTableColumn(#"Top 10 Per Year", "Top", {"ProductKey", "Sales Amount"}),
+				    #"Merged Product" = Table.NestedJoin(#"Expanded Top", {"ProductKey"}, #"src Product Heavy", {"ProductKey"}, "P", JoinKind.LeftOuter),
+				    #"Expanded Product" = Table.ExpandTableColumn(#"Merged Product", "P", {"ProductName"}, {"Product Name"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Expanded Product", {{"ProductKey", Int64.Type}, {"Sales Amount", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table

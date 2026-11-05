@@ -1,0 +1,28 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["Customer","Date","Product","Sales","Store","Currency Exchange","PQ Customer Segments","PQ Customer RFM","PQ Top Products by Year","PQ Delivery Days","PQ Basket Pairs","src Sales Heavy","src Customer Heavy","src Product Heavy","src Orders Heavy","src OrderRows Heavy","DataTag","HeavyDataTag","BasketDataTag","fnLoadParquet"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Customer
+ref table Date
+ref table Product
+ref table Sales
+ref table Store
+ref table 'Currency Exchange'
+ref table 'PQ Customer Segments'
+ref table 'PQ Customer RFM'
+ref table 'PQ Top Products by Year'
+ref table 'PQ Delivery Days'
+ref table 'PQ Basket Pairs'
+
+ref cultureInfo en-US
+
