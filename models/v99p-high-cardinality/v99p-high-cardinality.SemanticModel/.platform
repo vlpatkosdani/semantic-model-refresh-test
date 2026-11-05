@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v99p-high-cardinality"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "4d142043-b1b4-4bfb-9215-d41d2934499d"
+  }
+}

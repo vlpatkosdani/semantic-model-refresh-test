@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v99o-sorts"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "efadf79e-1931-401c-9975-93eeefc33d86"
+  }
+}

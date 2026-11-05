@@ -1,0 +1,27 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["stg Sales","stg Customer","stg Product","stg Store","stg Date","Customer","Date","Product","Sales","Store","Currency Exchange","DataTag","fnLoadParquet"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Customer
+ref table Date
+ref table Product
+ref table Sales
+ref table Store
+ref table 'Currency Exchange'
+ref table DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f
+ref table LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12
+ref table LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b
+ref table LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0
+
+ref cultureInfo en-US
+

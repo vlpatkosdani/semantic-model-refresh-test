@@ -38,4 +38,7 @@ v99k failed on F2 without any `Table.Buffer`, and refreshed on F64. L and M spli
 
 | Capacity | Result | Details |
 |---|---|---|
-| F2 | not run yet | |
+| F64 | refreshed | |
+| F2 | failed | cancelled at 3,146 MB, limit 3,066 MB, database size before command 5 MB (Data source error, 2026-11-05 15:06 UTC) |
+
+Together with v99m (refreshed on F2), this means the Power Query steps alone are enough to fail F2. The calculated columns are not needed for the failure. The cancellation figure is where the engine stopped the refresh, not the full peak, so 3,146 MB here and 3,099 MB for v99a cannot be compared directly.

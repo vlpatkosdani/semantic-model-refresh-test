@@ -36,4 +36,7 @@ If M refreshes, part of the difference also comes from the two high-cardinality 
 
 | Capacity | Result | Details |
 |---|---|---|
-| F2 | not run yet | |
+| F64 | refreshed | |
+| F2 | refreshed | |
+
+The eight calculated columns on Sales, the bidirectional relationships and auto date/time fit on F2 together. Swapping in the baseline Power Query is enough to bring v99k under the 3 GB limit.
