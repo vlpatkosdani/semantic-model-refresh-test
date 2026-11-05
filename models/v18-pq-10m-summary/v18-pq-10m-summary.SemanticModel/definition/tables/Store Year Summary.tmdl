@@ -1,0 +1,63 @@
+table 'Store Year Summary'
+	lineageTag: af904d0e-9c60-4f15-beb0-8ef691ffefe2
+
+	column StoreKey
+		dataType: int64
+		formatString: 0
+		lineageTag: a244162e-e232-4d54-b1a8-de57f325ba10
+		summarizeBy: none
+		sourceColumn: StoreKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: fb6b866b-3116-4c10-b7c5-4c9b15aef00f
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Amount'
+		dataType: double
+		formatString: #,0.00
+		lineageTag: b5547959-617e-46d5-8ccf-35c905051f41
+		summarizeBy: none
+		sourceColumn: Sales Amount
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: int64
+		formatString: #,0
+		lineageTag: b1dda114-3d81-4459-a8f2-8d499ae6e8f1
+		summarizeBy: none
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column Lines
+		dataType: int64
+		formatString: #,0
+		lineageTag: ee3f4187-4f92-48b9-be36-451ca8c6b024
+		summarizeBy: none
+		sourceColumn: Lines
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Store Year Summary' = m
+		mode: import
+		source =
+				let
+				    // Only about 740 rows are loaded, but the refresh still reads and groups every row of stg Sales 10M
+				    Source = #"stg Sales 10M",
+				    #"Grouped Rows" = Table.Group(Source, {"StoreKey", "Year"}, {
+				        {"Sales Amount", each List.Sum([Amount]), type number},
+				        {"Quantity", each List.Sum([Quantity]), Int64.Type},
+				        {"Lines", each Table.RowCount(_), Int64.Type}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Grouped Rows", {{"StoreKey", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table

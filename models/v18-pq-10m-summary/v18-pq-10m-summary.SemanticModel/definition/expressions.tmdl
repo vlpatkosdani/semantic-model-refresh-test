@@ -1,0 +1,51 @@
+/// Release tag of the data to load: data-1m-v1 or data-10m-v1
+expression DataTag = "data-1m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-1m-v1", Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 51a5e502-ea90-4d89-b63e-71f40e319111
+
+	annotation PBI_ResultType = Text
+
+/// Loads one Parquet file from the GitHub release named by Tag, or by DataTag when Tag is omitted.
+/// The base URL is a static literal and everything dynamic is in RelativePath,
+/// so the service can refresh it without a dynamic data source error.
+/// Timestamp columns arrive as UTC datetimezone; the zone is dropped so dates never shift.
+expression fnLoadParquet =
+		(FileName as text, optional Tag as nullable text) as table =>
+		let
+		    Source = Parquet.Document(
+		        Binary.Buffer(
+		            Web.Contents(
+		                "https://github.com",
+		                [RelativePath = "vlpatkosdani/semantic-model-refresh-test/releases/download/" & (if Tag = null then DataTag else Tag) & "/" & FileName]
+		            )
+		        )
+		    ),
+		    ZoneColumns = Table.SelectRows(Table.Schema(Source), each [Kind] = "datetimezone")[Name],
+		    RemovedZones = Table.TransformColumns(
+		        Source,
+		        List.Transform(ZoneColumns, (c) => {c, each if _ = null then null else DateTimeZone.RemoveZone(_), type datetime})
+		    )
+		in
+		    RemovedZones
+	lineageTag: 0d6f3c1e-8a52-4b7e-9c41-2f5b8e7a9d10
+
+	annotation PBI_ResultType = Function
+
+/// Release tag for the Store Year Summary source only: data-10m-v1 or data-1m-v1
+expression SummaryDataTag = "data-10m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-10m-v1", Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 95939bc9-15e0-4f82-97ee-b749ea9f5d2b
+
+	annotation PBI_ResultType = Text
+
+/// Not loaded. Reads the full Sales file of the SummaryDataTag release (23.5M rows on 10M) and keeps four columns.
+expression 'stg Sales 10M' =
+		let
+		    Source = fnLoadParquet("sales.parquet", SummaryDataTag),
+		    #"Selected Columns" = Table.SelectColumns(Source, {"OrderDate", "StoreKey", "Quantity", "NetPrice"}),
+		    #"Added Year" = Table.AddColumn(#"Selected Columns", "Year", each Date.Year([OrderDate]), Int64.Type),
+		    #"Added Amount" = Table.AddColumn(#"Added Year", "Amount", each [Quantity] * [NetPrice], type number)
+		in
+		    #"Added Amount"
+	lineageTag: 82b8cffd-ffca-4c77-9f85-3702ffc0a538
+
+	annotation PBI_ResultType = Table
+
