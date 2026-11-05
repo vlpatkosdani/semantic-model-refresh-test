@@ -30,4 +30,7 @@ v99a refreshed on F64 but failed on F2 at 3,099 MB, only 34 MB over the 3,065 MB
 
 | Capacity | Result | Details |
 |---|---|---|
-| F2 | not run yet | |
+| F64 | refreshed | |
+| F2 | failed | consumed memory not recorded yet |
+
+Removing the buffers was not enough. What remains in v99a, without any `Table.Buffer`, still does not fit in the 3 GB limit on F2.

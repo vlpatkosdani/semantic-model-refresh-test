@@ -1,0 +1,43 @@
+relationship 7af29c93-a4a1-4082-83d2-9f57ab371736
+	crossFilteringBehavior: bothDirections
+	fromColumn: Sales.CustomerKey
+	toColumn: Customer.CustomerKey
+
+relationship 6b5e0dab-b62f-4ded-8a7b-f2e12bd9c6b5
+	crossFilteringBehavior: bothDirections
+	fromColumn: Sales.ProductKey
+	toColumn: Product.ProductKey
+
+relationship 6029b9f6-210b-42fb-a96a-2a8bc3fd4d4b
+	crossFilteringBehavior: bothDirections
+	fromColumn: Sales.StoreKey
+	toColumn: Store.StoreKey
+
+relationship 0b5f92d3-53dd-41de-9f8f-6776ebfdcb67
+	fromColumn: Sales.'Order Date'
+	toColumn: Date.Date
+
+relationship f92796a2-a826-4e07-899a-ff3c6eceb911
+	isActive: false
+	fromColumn: Sales.'Delivery Date'
+	toColumn: Date.Date
+
+relationship a7c057d3-ede2-4fdd-812a-d5be2dc1569f
+	fromColumn: 'Currency Exchange'.Date
+	toColumn: Date.Date
+
+relationship 7a71d08b-0c26-46a2-b754-69b8e39a97f9
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Customer.Birthday
+	toColumn: LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Date
+
+relationship 15d460ac-5121-4fa3-9240-b70400d77763
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Store.'Open Date'
+	toColumn: LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Date
+
+relationship 55fa90e1-00c5-4666-8bc8-dde516c69228
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Store.'Close Date'
+	toColumn: LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Date
+

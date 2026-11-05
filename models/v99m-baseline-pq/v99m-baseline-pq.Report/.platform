@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v99m-baseline-pq"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5bce7bcf-9949-4e79-a4ec-4797bb5c27be"
+  }
+}
