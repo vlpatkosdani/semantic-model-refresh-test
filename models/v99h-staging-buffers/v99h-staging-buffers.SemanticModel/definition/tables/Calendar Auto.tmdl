@@ -1,0 +1,42 @@
+table 'Calendar Auto'
+	lineageTag: 4a0f735c-d549-4e4c-94e3-9649231d7525
+
+	column Date
+		dataType: dateTime
+		isNameInferred
+		lineageTag: 7fdc07cc-442a-48f0-bcfd-127478114dda
+		summarizeBy: none
+		isDataTypeInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		isNameInferred
+		lineageTag: f6f6e39a-9f57-4458-955a-0c09bd814b63
+		summarizeBy: none
+		isDataTypeInferred
+		sourceColumn: [Year]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: string
+		isNameInferred
+		lineageTag: 90b716c3-cefe-4547-bb5b-a6215829a218
+		summarizeBy: none
+		isDataTypeInferred
+		sourceColumn: [Month]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Calendar Auto' = calculated
+		mode: import
+		source =
+				// ANTIPATTERN: second date table from CALENDARAUTO. Its range comes from every date column in the model (customer birthdays go back decades).
+				ADDCOLUMNS (
+				    CALENDARAUTO (),
+				    "Year", YEAR ( [Date] ),
+				    "Month", FORMAT ( [Date], "mmm yyyy" )
+				)

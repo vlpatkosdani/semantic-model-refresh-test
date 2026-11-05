@@ -17,9 +17,9 @@ The DAX is unchanged from v99. `Sales Summary` and `Product Date Grid` have no c
 | v99 | everything | failed, cancelled at 25,599 MB |
 | v99a | v99 without calculated tables, flat table, staging buffers, unused query | refreshed |
 | v99d first version | v99a plus `Sales Flat`, staging buffers, unused query | failed, cancelled at 25,598 MB |
-| v99d | v99a plus unused query | refreshed |
+| v99d | v99a plus unused query | refreshed (3 times) |
 | v99e | v99d plus `Sales Flat` loaded | refreshed |
-| v99f | v99e plus three calculated tables | this run |
+| v99f | v99e plus three calculated tables | refreshed |
 
 ## How to read the result
 
