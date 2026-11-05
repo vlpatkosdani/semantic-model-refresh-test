@@ -45,3 +45,11 @@ Removing a report table also removes its cost, since the source queries are only
 
 - Refreshing in Desktop downloads more than 1 GB several times over and can take a long time. If you only want to publish, set both tags to `data-1m-v1` in Desktop, apply, publish, then set them back to `data-10m-v1` in the semantic model settings in the service.
 - If the refresh is very slow even on F64, `Binary.Buffer` in `fnLoadParquet` is the first thing to put back.
+
+## Results
+
+| Capacity | Data | Result | Peak memory | Duration | CU |
+|---|---|---|---|---|---|
+| F64 | star 1M, reports 10M | refreshed | not read yet | not read yet | not read yet |
+| F2 | star 1M, reports 10M | failed, cancelled at 3,242 MB (limit 3,067 MB, database size before command 4 MB) | | | |
+| Pro | star 1M, reports 10M | not run yet | | | |

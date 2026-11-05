@@ -27,3 +27,14 @@ Kept from v99:
 - If A refreshes on F64, its peak is the cost of everything except the removed tables. v99's 25.6 GB or more minus this peak is the cost of the calculated tables and the flat table together.
 - If A also refreshes on F2, the calculated columns, relationships and Power Query steps alone do not push the peak past 3 GB.
 - If A fails on F64, the main cost is in what is left, most likely the calculated columns on Sales.
+
+## Results
+
+| Capacity | Result | Details |
+|---|---|---|
+| F64 | refreshed | |
+| F2 | failed | cancelled at 3,099 MB, limit 3,065 MB, database size before command 6 MB |
+
+v99d to v99j all contain everything in v99a, so they are expected to fail on F2 as well. They were not run there.
+
+v99a still has two `Table.Buffer` steps in loaded queries: after the sort in `Sales` and at the start of `Customer Stats`.

@@ -32,4 +32,4 @@ The v99 diagnostic runs suggest that Power Query memory counts against the seman
 | Capacity | Data | Result | Peak memory | Duration | CU |
 |---|---|---|---|---|---|
 | F64 | star 1M, summary 10M | refreshed | not read yet | not read yet | not read yet |
-| F2 | star 1M, summary 10M | not run yet | | | |
+| F2 | star 1M, summary 10M | refreshed | not read yet | not read yet | not read yet |
