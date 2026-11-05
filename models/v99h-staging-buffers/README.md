@@ -19,7 +19,7 @@ This model is now v99 with `CopyCount = 1` instead of 2, plus the auto date/time
 | v99e | v99d plus `Sales Flat` loaded | refreshed |
 | v99f | v99e plus `Sales Summary`, `Product Date Grid`, `Calendar Auto` | refreshed |
 | v99g | v99f plus `Sales Copy`, one copy | refreshed |
-| v99h | v99g plus staging buffers | not run yet |
+| v99h | v99g plus staging buffers | failed, cancelled at 25,603 MB |
 
 ## How to read the result
 

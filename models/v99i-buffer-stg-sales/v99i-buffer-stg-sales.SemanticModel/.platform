@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v99i-buffer-stg-sales"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "ca8d1fc9-a590-48b4-9525-1814880e7569"
+  }
+}

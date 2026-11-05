@@ -64,7 +64,7 @@ These are estimates with roughly 50% error each way. The point of the lab is to 
 | `Calendar Auto` | under 1 MB | about 0 | low |
 | Bidirectional relationships | 0 | about 0 | 0 at refresh, cost shows at query time |
 | Many-to-many relationship | about 0 | about 0 | 0 at refresh, cost shows at query time |
-| Text types, sorts, Table.Buffer, Group By, shared staging | 0 to 10 MB | about 0 in the engine | high (mashup CPU and memory) |
+| Text types, sorts, Table.Buffer, Group By, shared staging | 0 to 10 MB | about 0 in the engine (wrong, see below) | high (mashup CPU and memory) |
 | `Unused Heavy Query` | 0 | 0 | 0 |
 
 Expected totals: model size about 250 to 400 MB, peak refresh memory about 3.5 to 6 GB. The two Sales copies dominate, then the crossjoin, then the old copy and the flat table. If the engine computes the calculated tables one at a time instead of in parallel, the peak lands at the low end.
@@ -78,3 +78,12 @@ The `Customer Lifetime Sales` column uses `ALLEXCEPT ( Sales, Sales[CustomerKey]
 1. Open `v99-kitchen-sink.pbip` and refresh. The calculated tables have no columns in TMDL yet. The engine creates them on the first refresh.
 2. Auto date/time: the model annotation is set to on, but TMDL cannot reliably create the hidden `LocalDateTable_*` tables. Go to File, Options and settings, Options, Current file, Data load, Time intelligence. Turn Auto date/time off and on again, then check that `LocalDateTable_*` tables appear in the TMDL folder after saving.
 3. Save, then publish.
+
+## Measured so far
+
+The estimates above were wrong in one important place. The diagnostic runs v99a to v99j split v99 into parts and refreshed them on F64:
+
+- Every calculated table, the flat table and all calculated columns refresh together on F64 (v99g).
+- Adding `Table.Buffer` to the not-loaded staging queries `stg Sales` and `stg Customer` makes the same model fail at over 25.6 GB (v99h).
+
+So the biggest single cause of v99's refresh memory is two `Table.Buffer` steps in queries that are never loaded. See the README of each diagnostic run for the full results table.

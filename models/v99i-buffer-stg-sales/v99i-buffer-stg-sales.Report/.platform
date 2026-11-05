@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v99i-buffer-stg-sales"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "a9b84810-5f69-458d-9961-5922a2305503"
+  }
+}
