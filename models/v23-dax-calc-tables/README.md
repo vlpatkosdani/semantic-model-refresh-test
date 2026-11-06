@@ -47,6 +47,11 @@ v99f added three of these tables to v99e and the F64 peak did not change (22,889
 
 | Capacity | Data | Run | Result | Peak MB | Power Query MB | Duration |
 |---|---|---|---|---|---|---|
-| F64 | 1M | first | not run yet | | | |
-| F64 | 10M | first | not run yet | | | |
-| F2 | 1M | first | not run yet | | | |
+| F64 | 1M | first | refreshed | 1,405 | 399 | 0.9 min |
+| F64 | 10M | first | refreshed | 13,062 | 1,202 | 8.6 min |
+| F2 | 1M | first | refreshed | | | |
+| F2 | 1M | second, right after the first | refreshed | | | |
+
+On F64 the peak is 1,405 MB, of which 399 MB is Power Query. The part outside Power Query grows from about 110 MB in the baseline to about 1,000 MB. Unlike the calculated columns, the calculated tables clearly raise the peak. The model grows from 76 MB to 193 MB (backup size in the refresh log). `Sales Copy` takes 8 seconds, `Product Date Grid` 5.5 seconds, `Sales Summary` 4.6 seconds.
+
+On 10M the peak is 13,062 MB, of which 1,202 MB is Power Query. The part outside Power Query is about 11,900 MB, against about 210 MB for the baseline on 10M. The calculated tables scale with the data, about 12 times from 1M to 10M. The model is 1,923 MB (baseline on 10M: 816 MB). This model would need at least F64; it would fail on F2 to F32.

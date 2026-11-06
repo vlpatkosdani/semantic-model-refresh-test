@@ -50,6 +50,16 @@ Removing a report table also removes its cost, since the source queries are only
 
 | Capacity | Data | Result | Peak memory | Duration | CU |
 |---|---|---|---|---|---|
-| F64 | star 1M, reports 10M | refreshed | not read yet | not read yet | not read yet |
+| F64 | star 1M, reports 10M | refreshed (first run, not in the monitoring logs, unconfirmed) | | | |
+| F64 | star 1M, reports 10M | failed 4 times on 2026-11-06 (09:15 to 09:48) | 22,002 to 24,464 MB, 99% Power Query | 7.8 to 11.8 min | 1,721 to 2,703 s |
 | F2 | star 1M, reports 10M | failed, cancelled at 3,242 MB (limit 3,067 MB, database size before command 4 MB) | | | |
 | Pro | star 1M, reports 10M | not run yet | | | |
+| F64, second run (2026-11-06) | star 1M, reports 10M | failed: "The M evaluation exceeded the memory limit ... Container exited unexpectedly with code 0x0000DEAD" | | | |
+
+The F64 runs of 2026-11-06 failed with a different error from the F2 run. It is not the resource governance cancellation of the semantic model ("consumed memory ... memory limit ..."). The Power Query container itself ran out of memory and was stopped. The first F64 run was reported as refreshed, but no refresh of it appears in the monitoring logs, so that result is not confirmed by data.
+
+The four failed runs peaked at 22.0 to 24.5 GB, below the 25.6 GB model limit of F64. So the limit that stopped them is the Power Query container's, not the semantic model's. When they were stopped, `PQ Customer RFM` was still running in all four, and `PQ Basket Pairs` in two. Time spent before the stop: `PQ Basket Pairs` 435 s, `PQ Delivery Days` 362 s, `PQ Customer Segments` 222 s, `PQ Top Products by Year` 80 s.
+
+The error text lists `Odbc.DataSource/Microsoft ODBC Driver for Google BigQuery` under "Used features". This model has no BigQuery source; it only reads Parquet files with `Web.Contents`. The error of the last run (2026-11-06 10:33:54 UTC) is the same "M evaluation exceeded the memory limit ... 0x0000DEAD" but lists "Used features: (none)", so the BigQuery mention was most likely left over from another evaluation in the same container, not part of this model.
+
+Five more F64 runs on 2026-11-06 (09:55 to 10:33), with `DataTag = data-1m-v1`, `HeavyDataTag = data-10m-v1` and `BasketDataTag = data-1m-v1`. All failed. The first peaked at 20,158 MB. The next four peaked at 14,366 to 14,733 MB, with `PQ Basket Pairs` finishing in 24 seconds. In all four, `PQ Customer RFM` was the only query still running when the refresh was stopped. So the self-join is not what fails F64; the RFM query, three rankings over all 1.68M customers of the 10M data, is. The peak at the stop is well below the 25.6 GB model limit, which fits a limit per Power Query evaluation rather than one for the whole model.

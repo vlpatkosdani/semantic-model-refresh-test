@@ -34,3 +34,13 @@ None. This is the control. It sets the reference numbers for model size, peak re
 - Model size: about 40 to 60 MB.
 - Peak refresh memory: a few hundred MB, roughly two to four times the model size during a full refresh.
 - Should refresh on every capacity, F2 included.
+
+## Results
+
+| Capacity | Data | Result | Peak MB | Power Query MB | Duration | Model size |
+|---|---|---|---|---|---|---|
+| F2 | 1M | refreshed | | | 2 min | |
+| F64 | 1M | refreshed | 785 | 677 | 0.7 min | 76 MB |
+| F64 | 10M | refreshed | 2,040 | 1,832 | 6 min | 816 MB |
+
+Model size is the backup size in the refresh log. On 1M the model is 76 MB, a bit above the 40 to 60 MB expected. On 10M the peak stays below the 3 GB limit of F2, so a clean star schema of 23.7M sales rows is expected to fit on F2.
