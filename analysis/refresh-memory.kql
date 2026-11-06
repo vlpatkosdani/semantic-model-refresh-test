@@ -1,186 +1,117 @@
 // Refresh memory analysis for the semantic model refresh lab.
 //
-// For Fabric workspace monitoring: the SemanticModelLogs table in the monitoring
-// Eventhouse of each lab workspace. Paste this file into a KQL queryset, put the
-// cursor in one query and press Run. Each query stands on its own.
+// For Fabric workspace monitoring: the SemanticModelLogs table in the
+// "Monitoring KQL database" of the F64 lab workspace. The F2 workspace has no
+// monitoring (F2 cannot carry the monitoring Eventhouse), so its results come
+// from the error messages and are recorded by hand in the model READMEs.
 //
-// Every query starts with the same Logs block. Each lab workspace (F2, F64, ...)
-// has its own "Monitoring KQL database", so the block unions them. To fill in a
-// line: open the Monitoring Eventhouse of that workspace and copy its Query URI.
-// Remove lines for workspaces you don't use. When the queryset is connected to
-// one of the databases, that one can also be written as just SemanticModelLogs.
+// Every model in the lab refreshes on F64, so these logs give the real peak of
+// each model. In all runs so far, a peak above the F2 limit (about 3,066 MB)
+// has meant a failure on F2, and a peak below it a successful refresh.
 //
-// RequestId is the column that ties together all events of one refresh. The
-// Logs block sets it to OperationId. Run query 0 once to confirm that; if
-// CorrelationId turns out to be the right one, change it in each Logs block.
+// Paste this file into a KQL queryset connected to the Monitoring KQL database,
+// put the cursor in one query and press Run. Each query stands on its own and
+// needs no input.
 //
-// The capacity is read from the workspace name, e.g. "... - F64".
-// If a column is missing, check the names with: SemanticModelLogs | getschema
+// How a refresh is found: its ExecutionMetrics event has tabularConnectionTimeoutMs
+// in it. The many small metadata and discover commands around a refresh have
+// ExecutionMetrics too, but without that field and with a peak of 0. Queries 3
+// and 4 take the progress events of the same model between timeStart and timeEnd
+// of that refresh.
+
 
 // ---------------------------------------------------------------------------
-// 0. Which column ties the events of one refresh together (run once)
+// 1. One row per refresh: model, result, peak memory, duration, CPU
 // ---------------------------------------------------------------------------
-// Run it in the queryset connected to one monitoring database, after a refresh
-// in that workspace. It takes the latest ExecutionMetrics event and counts, per
-// event type, how many events share its OperationId, CorrelationId and
-// XmlaSessionId. The right key has CommandBegin, CommandEnd, ProgressReportBegin,
-// ProgressReportEnd and ExecutionMetrics, and only one CommandEnd.
-let Latest = SemanticModelLogs
-| where Timestamp > ago(1d) and OperationName == "ExecutionMetrics"
-| top 1 by Timestamp;
-let Op = toscalar(Latest | project OperationId);
-let Corr = toscalar(Latest | project CorrelationId);
-let Sess = toscalar(Latest | project XmlaSessionId);
+// errorCount > 0 marks a failed refresh. For a refresh cancelled by resource
+// governance, the peak is where the engine stopped it, a lower bound.
+// MEnginePeakMB is the Power Query (mashup engine) part of the peak.
+let F2LimitMB = 3066;
 SemanticModelLogs
-| where Timestamp > ago(1d)
-| summarize ByOperationId = countif(OperationId == Op),
-            ByCorrelationId = countif(CorrelationId == Corr),
-            BySessionId = countif(XmlaSessionId == Sess)
-  by OperationName
-| where ByOperationId + ByCorrelationId + BySessionId > 0
-| order by OperationName asc
-
-
-// ---------------------------------------------------------------------------
-// 1. One row per refresh: model, capacity, result, peak memory, duration, CPU
-// ---------------------------------------------------------------------------
-// PeakMemMB is approximatePeakMemConsumptionKB from ExecutionMetrics.
-// ConsumedMB comes from the resource governance error of a failed refresh: the
-// point where the engine cancelled it, a lower bound for the peak it needed.
-let Logs = union
-    cluster("<F2 Query URI>").database("Monitoring KQL database").SemanticModelLogs,
-    cluster("<F64 Query URI>").database("Monitoring KQL database").SemanticModelLogs
-| extend RequestId = OperationId;
-let Lookback = 7d;
-let L = Logs | where Timestamp > ago(Lookback) and isnotempty(RequestId);
-let Names = L
-| summarize Model = take_anyif(ItemName, isnotempty(ItemName)),
-            Workspace = take_anyif(WorkspaceName, isnotempty(WorkspaceName))
-  by RequestId;
-let Commands = L
-| where OperationName == "CommandEnd" and EventText has "refresh"
-| summarize arg_max(Timestamp, DurationMs, CpuTimeMs, Status) by RequestId;
-let Metrics = L
-| where OperationName == "ExecutionMetrics"
-| summarize arg_max(Timestamp, EventText) by RequestId
+| where Timestamp > ago(30d) and OperationName == "ExecutionMetrics"
 | extend m = parse_json(EventText)
-| project RequestId,
-          PeakMemMB     = round(todouble(m.approximatePeakMemConsumptionKB) / 1024, 0),
-          MEnginePeakMB = round(todouble(m.mEnginePeakMemoryKB) / 1024, 0),
-          TotalCpuSec   = round(todouble(m.totalCpuTimeMs) / 1000, 0),
-          MEngineCpuSec = round(todouble(m.mEngineCpuTimeMs) / 1000, 0),
-          Metrics       = m;
-let Governance = L
-| where EventText has "Resource Governance"
-| summarize arg_max(Timestamp, EventText) by RequestId
-| project RequestId,
-          ConsumedMB     = toint(extract(@"consumed memory (\d+) MB", 1, EventText)),
-          LimitMB        = toint(extract(@"memory limit (\d+) MB", 1, EventText)),
-          DbSizeBeforeMB = toint(extract(@"database size before command execution (\d+) MB", 1, EventText));
-Commands
-| lookup kind=leftouter Names on RequestId
-| lookup kind=leftouter Metrics on RequestId
-| lookup kind=leftouter Governance on RequestId
-| extend Capacity = extract(@"\b([FPA]\d+)\b", 1, Workspace),
-         Result = iff(Status == "Succeeded" and isnull(ConsumedMB), "refreshed", "failed"),
-         DurationMin = round(DurationMs / 60000.0, 1)
-| project Timestamp, Model, Capacity, Result, PeakMemMB, MEnginePeakMB, ConsumedMB, LimitMB,
-          DbSizeBeforeMB, DurationMin, TotalCpuSec, MEngineCpuSec, RequestId, Metrics
-| order by Model asc, Capacity asc, Timestamp desc
+| where isnotnull(m.tabularConnectionTimeoutMs)
+| project Timestamp, Model = ItemName,
+          Result         = iff(toint(m.errorCount) > 0, "failed", "refreshed"),
+          PeakMemMB      = round(todouble(m.approximatePeakMemConsumptionKB) / 1024, 0),
+          MEnginePeakMB  = round(todouble(m.mEnginePeakMemoryKB) / 1024, 0),
+          DurationMin    = round(todouble(m.durationMs) / 60000, 1),
+          TotalCpuSec    = round(todouble(m.totalCpuTimeMs) / 1000, 0),
+          MEngineCpuSec  = round(todouble(m.mEngineCpuTimeMs) / 1000, 0),
+          VertipaqCpuSec = round(todouble(m.vertipaqJobCpuTimeMs) / 1000, 0),
+          RowsLoaded     = tolong(m.vertipaqTotalRows)
+| extend PeakVsF2 = round(PeakMemMB / F2LimitMB, 2)
+| order by Model asc, Timestamp desc
 
 
 // ---------------------------------------------------------------------------
-// 2. Compare models: latest run of each model on each capacity, as a chart
+// 2. Compare models: latest refresh of each model, as a chart
 // ---------------------------------------------------------------------------
-// Memory is the ExecutionMetrics peak for a successful run and the consumed
-// memory at cancellation for a failed one. Change Cap to compare another capacity.
-let Cap = "F2";
-let Logs = union
-    cluster("<F2 Query URI>").database("Monitoring KQL database").SemanticModelLogs,
-    cluster("<F64 Query URI>").database("Monitoring KQL database").SemanticModelLogs
-| extend RequestId = OperationId;
-let L = Logs | where Timestamp > ago(7d) and isnotempty(RequestId);
-let Names = L
-| summarize Model = take_anyif(ItemName, isnotempty(ItemName)),
-            Workspace = take_anyif(WorkspaceName, isnotempty(WorkspaceName))
-  by RequestId;
-let Commands = L
-| where OperationName == "CommandEnd" and EventText has "refresh"
-| summarize arg_max(Timestamp, Status) by RequestId;
-let Metrics = L
-| where OperationName == "ExecutionMetrics"
-| summarize arg_max(Timestamp, EventText) by RequestId
-| project RequestId, PeakMemMB = round(todouble(parse_json(EventText).approximatePeakMemConsumptionKB) / 1024, 0);
-let Governance = L
-| where EventText has "Resource Governance"
-| summarize arg_max(Timestamp, EventText) by RequestId
-| project RequestId, ConsumedMB = todouble(extract(@"consumed memory (\d+) MB", 1, EventText));
-Commands
-| lookup kind=leftouter Names on RequestId
-| lookup kind=leftouter Metrics on RequestId
-| lookup kind=leftouter Governance on RequestId
-| extend Capacity = extract(@"\b([FPA]\d+)\b", 1, Workspace),
-         Result = iff(Status == "Succeeded" and isnull(ConsumedMB), "refreshed", "failed")
-| where Capacity == Cap
-| summarize arg_max(Timestamp, Result, PeakMemMB, ConsumedMB) by Model
-| extend MemoryMB = iff(Result == "refreshed", PeakMemMB, ConsumedMB),
-         Label = strcat(Model, " (", Result, ")")
-| project Label, MemoryMB
+// Total peak and its Power Query part side by side. A total above about
+// 3,066 MB predicts a failure on F2. For failed refreshes the bar is where the
+// engine cancelled, not the full peak.
+SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "ExecutionMetrics"
+| extend m = parse_json(EventText)
+| where isnotnull(m.tabularConnectionTimeoutMs)
+| summarize arg_max(Timestamp, m) by Model = ItemName
+| project Label = strcat(Model, iff(toint(m.errorCount) > 0, " (failed)", "")),
+          PeakMemMB = round(todouble(m.approximatePeakMemConsumptionKB) / 1024, 0),
+          PowerQueryMB = round(todouble(m.mEnginePeakMemoryKB) / 1024, 0)
 | order by Label asc
-| render barchart with (title = "Refresh memory, latest run per model", xtitle = "", ytitle = "MB")
+| render barchart with (title = "Peak refresh memory on F64, latest refresh per model", xtitle = "", ytitle = "MB")
 
 
 // ---------------------------------------------------------------------------
-// 3. Timeline of one refresh
+// 3. Time and rows per table, latest refresh of every model
 // ---------------------------------------------------------------------------
-// Set Id to a RequestId from query 1.
-let Id = "<RequestId from query 1>";
-let Logs = union
-    cluster("<F2 Query URI>").database("Monitoring KQL database").SemanticModelLogs,
-    cluster("<F64 Query URI>").database("Monitoring KQL database").SemanticModelLogs
-| extend RequestId = OperationId;
-Logs
-| where RequestId == Id
-| where OperationName in ("ProgressReportBegin", "ProgressReportEnd", "ExecutionMetrics", "Error", "CommandEnd")
-| project Timestamp, OperationName, OperationDetailName, XmlaObjectPath, DurationMs, CpuTimeMs,
-          Rows = ProgressCounter, Status, EventText = substring(EventText, 0, 300)
-| order by Timestamp asc
-
-
-// ---------------------------------------------------------------------------
-// 4. What was still running when a refresh failed
-// ---------------------------------------------------------------------------
-// Steps that began but never ended. For a refresh cancelled by resource
-// governance, these are the tables that were being read or processed.
-let Id = "<RequestId from query 1>";
-let Logs = union
-    cluster("<F2 Query URI>").database("Monitoring KQL database").SemanticModelLogs,
-    cluster("<F64 Query URI>").database("Monitoring KQL database").SemanticModelLogs
-| extend RequestId = OperationId;
-let Steps = Logs
-| where RequestId == Id and OperationName in ("ProgressReportBegin", "ProgressReportEnd");
-Steps
-| where OperationName == "ProgressReportBegin"
-| summarize Began = min(Timestamp) by XmlaObjectPath, OperationDetailName
-| join kind=leftanti (
-    Steps | where OperationName == "ProgressReportEnd" | distinct XmlaObjectPath, OperationDetailName
-  ) on XmlaObjectPath, OperationDetailName
-| order by Began asc
-
-
-// ---------------------------------------------------------------------------
-// 5. Time and rows per table in one refresh
-// ---------------------------------------------------------------------------
-// ReadData is the time Power Query spent delivering the rows of a partition.
-// The other steps (CompressSegment, VertiPaq, calculated columns) are engine work.
-let Id = "<RequestId from query 1>";
-let Logs = union
-    cluster("<F2 Query URI>").database("Monitoring KQL database").SemanticModelLogs,
-    cluster("<F64 Query URI>").database("Monitoring KQL database").SemanticModelLogs
-| extend RequestId = OperationId;
-Logs
-| where RequestId == Id and OperationName == "ProgressReportEnd"
-| summarize DurationSec = round(sum(DurationMs) / 1000.0, 1), CpuSec = round(sum(CpuTimeMs) / 1000.0, 1),
+// One row per model, object (table and partition) and step. ReadData is the
+// time Power Query spent delivering the rows of a partition. The other steps
+// (CompressSegment, VertiPaq, calculated columns, relationships) are engine
+// work. Add `| where OperationDetailName == "ReadData"` at the end to keep only
+// the Power Query side, or `| where Model == "v20-pq-sort"` for one model.
+let Refreshes = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "ExecutionMetrics"
+| extend m = parse_json(EventText)
+| where isnotnull(m.tabularConnectionTimeoutMs)
+| summarize arg_max(Timestamp, m) by Model = ItemName
+| project Model, Start = todatetime(m.timeStart), End = todatetime(m.timeEnd) + 5s,
+          Result = iff(toint(m.errorCount) > 0, "failed", "refreshed");
+SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "ProgressReportEnd"
+| project Timestamp, Model = ItemName, OperationDetailName, XmlaObjectPath, DurationMs, CpuTimeMs, ProgressCounter
+| join kind=inner Refreshes on Model
+| where Timestamp between (Start .. End)
+| extend Object = strcat_array(array_slice(split(XmlaObjectPath, "."), -2, -1), ".")
+| summarize DurationSec = round(sum(DurationMs) / 1000.0, 1),
+            CpuSec = round(sum(CpuTimeMs) / 1000.0, 1),
             Rows = max(ProgressCounter)
-  by XmlaObjectPath, OperationDetailName
-| order by DurationSec desc
+  by Model, Result, Object, OperationDetailName
+| order by Model asc, DurationSec desc
+
+
+// ---------------------------------------------------------------------------
+// 4. What was running when a refresh failed, every failed refresh
+// ---------------------------------------------------------------------------
+// For each failed refresh on this capacity (v99, v99d, v99h and v99i on F64),
+// the steps that began but never ended, or ended with an error. These are the
+// tables that were being read or processed when the engine cancelled.
+let Failed = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "ExecutionMetrics"
+| extend m = parse_json(EventText)
+| where isnotnull(m.tabularConnectionTimeoutMs) and toint(m.errorCount) > 0
+| project Model = ItemName, RefreshEnd = Timestamp,
+          Start = todatetime(m.timeStart), End = todatetime(m.timeEnd) + 5s;
+SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName in ("ProgressReportBegin", "ProgressReportEnd")
+| project Timestamp, Model = ItemName, OperationName, OperationDetailName, XmlaObjectPath, Status
+| join kind=inner Failed on Model
+| where Timestamp between (Start .. End)
+| summarize Began     = minif(Timestamp, OperationName == "ProgressReportBegin"),
+            Ended     = maxif(Timestamp, OperationName == "ProgressReportEnd"),
+            EndStatus = take_anyif(Status, OperationName == "ProgressReportEnd")
+  by Model, RefreshEnd, XmlaObjectPath, OperationDetailName
+| where isnull(Ended) or EndStatus != "Succeeded"
+| extend Object = strcat_array(array_slice(split(XmlaObjectPath, "."), -2, -1), ".")
+| project Model, RefreshEnd, Object, OperationDetailName, Began, Ended, EndStatus
+| order by Model asc, RefreshEnd desc, Began asc
