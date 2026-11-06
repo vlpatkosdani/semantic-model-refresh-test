@@ -32,4 +32,9 @@ All four keep what v99m has: the eight calculated columns on Sales, bidirectiona
 
 | Capacity | Result | Details |
 |---|---|---|
-| F2 | not run yet | |
+| F64 | refreshed | |
+| F2 | failed | consumed memory not recorded |
+
+Results of the whole split on F2: n refreshed, o failed, p refreshed, q failed. All four refreshed on F64.
+
+The sorts alone and `Customer Stats` alone are each enough to push v99m over 3 GB. Text staging and the high-cardinality columns are not. Sorting and grouping are the two steps here that cannot stream: Power Query has to read the whole Sales table into memory before it returns the first row, which has the same effect as a `Table.Buffer`.

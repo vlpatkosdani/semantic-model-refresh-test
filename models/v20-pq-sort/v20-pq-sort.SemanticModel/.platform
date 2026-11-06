@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v20-pq-sort"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "23bc9aa7-fea8-45b8-b3bb-4903c07fc63b"
+  }
+}

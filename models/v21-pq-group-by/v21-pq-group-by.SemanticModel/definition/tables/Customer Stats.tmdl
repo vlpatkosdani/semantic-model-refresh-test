@@ -1,0 +1,65 @@
+table 'Customer Stats'
+	lineageTag: c2b60f6a-26dd-4023-bd48-b174d7302441
+
+	column CustomerKey
+		dataType: int64
+		formatString: 0
+		lineageTag: f6c1989b-8626-4142-b520-1901935a0d1c
+		summarizeBy: none
+		sourceColumn: CustomerKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 39a0d08d-3d9a-4403-9aec-295a4c539026
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column Orders
+		dataType: int64
+		formatString: 0
+		lineageTag: 7d4a0425-5548-441b-8d8a-4f53b68f364b
+		summarizeBy: none
+		sourceColumn: Orders
+
+		annotation SummarizationSetBy = Automatic
+
+	column Lines
+		dataType: int64
+		formatString: 0
+		lineageTag: bd098e9d-88b7-45e9-80b8-f64d17927a75
+		summarizeBy: none
+		sourceColumn: Lines
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Amount'
+		dataType: double
+		formatString: #,0.00
+		lineageTag: ed8c63ef-e2c0-4484-a4c1-923cbcc26a7f
+		summarizeBy: none
+		sourceColumn: Sales Amount
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Customer Stats' = m
+		mode: import
+		source =
+				let
+				    // ANTIPATTERN: Group By over the full fact in Power Query. CustomerKey repeats once per year, so the relationship to Sales is many-to-many.
+				    Source = fnLoadParquet("sales.parquet"),
+				    #"Added Year" = Table.AddColumn(Source, "Year", each Date.Year([OrderDate]), Int64.Type),
+				    #"Grouped Rows" = Table.Group(#"Added Year", {"CustomerKey", "Year"}, {
+				        {"Orders", each List.Count(List.Distinct([OrderKey])), Int64.Type},
+				        {"Lines", each Table.RowCount(_), Int64.Type},
+				        {"Sales Amount", each List.Sum(List.Transform(Table.ToRows(Table.SelectColumns(_, {"Quantity", "NetPrice"})), (r) => Number.From(r{0}, "en-US") * Number.From(r{1}, "en-US"))), type number}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Grouped Rows", {{"CustomerKey", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
