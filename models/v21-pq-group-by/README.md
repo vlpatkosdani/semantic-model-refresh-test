@@ -28,4 +28,7 @@ A Group By cannot stream either. Power Query has to read the whole fact table an
 
 | Capacity | Result | Details |
 |---|---|---|
-| F2 | not run yet | |
+| F64 | refreshed | |
+| F2 | failed | consumed memory not recorded |
+
+One summary table built with a Group By in Power Query takes the baseline off F2. The table itself is small; the memory is used while Power Query groups the full Sales table.

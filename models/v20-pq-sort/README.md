@@ -30,4 +30,7 @@ A sort cannot stream. Power Query has to read all 2.35M rows into memory before 
 
 | Capacity | Result | Details |
 |---|---|---|
-| F2 | not run yet | |
+| F64 | refreshed | |
+| F2 | failed | consumed memory not recorded |
+
+The two sorts alone take the baseline off F2. The loaded table is identical to the baseline, only the row order differs, so the extra memory is used by Power Query during the refresh and none of it stays in the model.

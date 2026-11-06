@@ -5,3 +5,6 @@
 data/
 *.parquet
 *.csv
+
+# Refresh results are measurements, not downloaded data
+!results/*.csv
