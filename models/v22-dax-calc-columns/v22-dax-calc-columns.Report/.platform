@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v22-dax-calc-columns"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "277812f5-5bef-4805-b831-19a19d13b911"
+  }
+}
