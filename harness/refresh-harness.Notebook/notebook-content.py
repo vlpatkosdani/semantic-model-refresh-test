@@ -633,3 +633,10 @@ print(summary_text)
 
 if stop_reason:
     raise Exception(f"Harness stopped: {stop_reason}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
