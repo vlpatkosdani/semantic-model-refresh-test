@@ -270,7 +270,7 @@ def main():
     warn_before_10m(args.variant, data_tag, targets)
     sync_harness_workspace(commit)
 
-    run_id = dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ") + "-" + args.variant.split("-")[0] + "-" + uuid.uuid4().hex[:4]
+    run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + args.variant.split("-")[0] + "-" + uuid.uuid4().hex[:4]
     job_id, job = run_notebook({"variant": args.variant, "data_tag": data_tag, "targets": ",".join(targets),
                                 "expected_commit": commit, "harness_run_id": run_id})
     if job.get("status") != "Completed":

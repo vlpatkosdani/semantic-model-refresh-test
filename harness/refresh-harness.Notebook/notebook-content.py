@@ -38,7 +38,7 @@ max_log_wait_minutes = "20"   # stop waiting for the monitoring event after this
 
 # CELL ********************
 
-%pip install -q semantic-link-labs==0.18.1
+# MAGIC %pip install -q semantic-link-labs==0.18.1
 
 # METADATA ********************
 
@@ -79,7 +79,7 @@ CHANGE_FLAG_PCT = 1.0
 fab = fabric.FabricRestClient()
 pbi = fabric.PowerBIRestClient()
 
-run_id = harness_run_id or dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
+run_id = harness_run_id or dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
 target_list = [t.strip() for t in targets.split(",") if t.strip()]
 ctx = notebookutils.runtime.context
 notebook_run_id = str(ctx.get("currentRunId") or ctx.get("activityId") or "")
