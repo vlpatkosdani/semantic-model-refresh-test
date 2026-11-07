@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "KQLQueryset",
+    "displayName": "KustoQueryWorkbench_1",
+    "description": "KustoQueryWorkbench_1"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "57614697-08b8-8a1c-4b62-bfcbee081e3a"
+  }
+}
