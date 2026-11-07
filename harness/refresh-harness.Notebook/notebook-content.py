@@ -12,10 +12,8 @@
 # MARKDOWN ********************
 
 # # Refresh harness
-#
 # Runs one variant of the refresh lab: update from Git, check the model and its `DataTag`, full refresh,
 # read the monitoring logs (F64 only), compare, and record one row per refresh.
-#
 # Started by `harness/run_variant.py` through the Job Scheduler API, or by hand (see `docs/harness.md`).
 # Runs as the user who starts it. One variant per run.
 
@@ -38,7 +36,8 @@ max_log_wait_minutes = "20"   # stop waiting for the monitoring event after this
 
 # CELL ********************
 
-# MAGIC %pip install -q semantic-link-labs==0.18.1
+import subprocess, sys
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "semantic-link-labs==0.18.1"])
 
 # METADATA ********************
 
@@ -296,7 +295,6 @@ def refresh(cap, dataset_id):
 # MARKDOWN ********************
 
 # ## Steps 4 and 5: monitoring logs (F64 only)
-#
 # No request ID reaches `SemanticModelLogs`, so the refresh is matched by model ID and time:
 # the `ExecutionMetrics` event of a refresh (it has `tabularConnectionTimeoutMs`) whose `timeStart`
 # is within two minutes of the start reported by the refresh API. Queries 1, 3 and 4 are the ones in
