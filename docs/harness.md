@@ -6,8 +6,8 @@ The harness runs one variant from this repo on the lab capacities and records wh
 
 | Path | What it is |
 |---|---|
-| `harness/refresh-harness.Notebook/` | The Fabric notebook (PySpark). Git integration creates it in both lab workspaces. It only runs in the F64 workspace. |
-| `harness/harness_lake.Lakehouse/` | The Lakehouse for the results. Also created in both workspaces, used only in F64. |
+| `harness/refresh-harness.Notebook/` | The Fabric notebook (PySpark). Git integration creates it in the F64 workspace, where it runs. |
+| `harness/harness_lake.Lakehouse/` | The Lakehouse for the results, in the F64 workspace. |
 | `harness/run_variant.py` | The local driver. Starts the notebook and pulls its results into the repo. Python standard library only. |
 | `results/harness-runs.csv` | One row per refresh, appended by the driver. Never rewritten. |
 | `results/harness/<run id>/` | Run summary (`summary.md`) and the log extracts of that run (`f64-metrics.csv`, `f64-steps.csv`, `f64-failed_steps.csv`). |
@@ -82,8 +82,9 @@ The read-back value is in every row (`data_tag_readback`).
 ## Setup (once)
 
 1. Both workspaces clean in Source control (nothing uncommitted).
-2. Commit and push the `harness/` folder. Update from Git in both workspaces creates the notebook and the Lakehouse. The driver does this for F64; the notebook does it for F2 on the first run with F2 as a target.
-3. Local: `az login` as yourself, in the lab tenant. The driver uses `az account get-access-token` for the Fabric API and OneLake.
+2. Git folders: F64 syncs the repo root (`/`), F2 syncs `/models` only. F2 cannot hold Fabric items such as notebooks, Lakehouses or KQL querysets ("The user is not allowed to create this fabric item"), and an Update from Git is all or nothing, so one such folder in its scope blocks every update. Keep everything that is not a Power BI item outside `models/`.
+3. Commit and push the `harness/` folder. The driver brings F64 up to date, which creates the notebook and the Lakehouse there.
+4. Local: `az login` as yourself, in the lab tenant. The driver uses `az account get-access-token` for the Fabric API and OneLake.
 
 ## Permissions
 
@@ -129,3 +130,13 @@ Versions: semantic-link-labs is pinned to 0.18.1 in the first code cell. `sempy`
 - A peak for a failed refresh is a lower bound.
 - If the `ExecutionMetrics` event does not arrive within 20 minutes, the row is recorded with numbers from the refresh API only (`metrics_source` says so).
 - The comparison uses harness runs only. The earlier manual runs are in the READMEs and `results/monitoring-*.csv`.
+
+## Notebook source format
+
+Fabric rewrites a notebook it does not fully like and then shows it as modified, which stops the harness. Keep `notebook-content.py` the way Fabric stores it:
+
+- no magic commands (`%pip`); the install is a `pip` call through `subprocess`
+- no blank lines inside a markdown cell
+- a `# METADATA` block after every code cell, including the last one
+
+After editing the notebook, run it once by hand and compare with `getDefinition` if F64 shows it as modified.
