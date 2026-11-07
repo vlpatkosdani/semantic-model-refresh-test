@@ -1,0 +1,637 @@
+# Fabric notebook source
+
+# METADATA ********************
+
+# META {
+# META   "kernel_info": {
+# META     "name": "synapse_pyspark"
+# META   },
+# META   "dependencies": {}
+# META }
+
+# MARKDOWN ********************
+
+# # Refresh harness
+#
+# Runs one variant of the refresh lab: update from Git, check the model and its `DataTag`, full refresh,
+# read the monitoring logs (F64 only), compare, and record one row per refresh.
+#
+# Started by `harness/run_variant.py` through the Job Scheduler API, or by hand (see `docs/harness.md`).
+# Runs as the user who starts it. One variant per run.
+
+# PARAMETERS CELL ********************
+
+variant = "v00-baseline"      # model folder and semantic model name
+data_tag = "data-1m-v1"       # DataTag committed in the variant's TMDL; the model must read back the same value
+targets = "F64"               # comma separated: F2, F64. Refreshed one after the other, in this order
+expected_commit = ""          # commit the driver pushed; empty means whatever the remote branch has
+harness_run_id = ""           # set by the driver; empty means generate one
+max_refresh_minutes = "120"   # stop polling the refresh after this many minutes
+max_log_wait_minutes = "20"   # stop waiting for the monitoring event after this many minutes
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+%pip install -q semantic-link-labs==0.18.1
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+import datetime as dt
+import io
+import json
+import re
+import time
+import uuid
+
+import pandas as pd
+import sempy.fabric as fabric
+import sempy_labs as labs
+import notebookutils
+
+# Lab environment. IDs, not secrets.
+WORKSPACES = {
+    "F2": "58b05b2a-00d2-45df-9034-0a044bb3d162",
+    "F64": "a1a434d3-4b0b-46d2-a4a2-147e3aff9e77",
+}
+HARNESS_WORKSPACE = WORKSPACES["F64"]   # where this notebook and harness_lake live
+LAKEHOUSE_NAME = "harness_lake"
+MONITORED = {"F64": "82e1f4b3-28ac-4c62-a7bd-6d6846b2032e"}   # capacity -> Monitoring KQL database ID
+REFRESH_PARALLELISM = 6   # what the manual service refreshes used, so results compare
+
+# Per-model refresh memory limits in MB. F2 is the measured limit from the error messages.
+# F16, F32 and F64 are the documented limits (F64 errors showed 25,592 to 25,593 MB).
+LIMITS_MB = {"F2": 3066, "F16": 5120, "F32": 10240, "F64": 25600}
+CHANGE_FLAG_PCT = 1.0
+
+fab = fabric.FabricRestClient()
+pbi = fabric.PowerBIRestClient()
+
+run_id = harness_run_id or dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
+target_list = [t.strip() for t in targets.split(",") if t.strip()]
+ctx = notebookutils.runtime.context
+notebook_run_id = str(ctx.get("currentRunId") or ctx.get("activityId") or "")
+
+
+class HarnessStop(Exception):
+    """A check failed. Nothing is fixed silently: the run stops and reports."""
+
+
+def utcnow():
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def iso(t):
+    return t.strftime("%Y-%m-%dT%H:%M:%SZ") if t else ""
+
+
+def ok(resp, what):
+    if resp.status_code >= 300:
+        raise HarnessStop(f"{what}: HTTP {resp.status_code} {resp.text[:2000]}")
+    return resp
+
+
+def list_items(ws, item_type):
+    items, url = [], f"v1/workspaces/{ws}/items?type={item_type}"
+    while url:
+        body = ok(fab.get(url), f"list {item_type} in {ws}").json()
+        items += body.get("value", [])
+        token = body.get("continuationToken")
+        url = f"v1/workspaces/{ws}/items?type={item_type}&continuationToken={token}" if token else None
+    return items
+
+
+def find_item(ws, item_type, name):
+    hits = [i for i in list_items(ws, item_type) if i["displayName"] == name]
+    if len(hits) != 1:
+        raise HarnessStop(f"{item_type} '{name}' found {len(hits)} times in workspace {ws}")
+    return hits[0]["id"]
+
+
+lake_id = find_item(HARNESS_WORKSPACE, "Lakehouse", LAKEHOUSE_NAME)
+LAKE = f"abfss://{HARNESS_WORKSPACE}@onelake.dfs.fabric.microsoft.com/{lake_id}"
+RUNS_TABLE = f"{LAKE}/Tables/refresh_runs"
+RUN_DIR = f"{LAKE}/Files/harness/runs/{run_id}"
+log_lines = []
+
+
+def note(msg):
+    line = f"{iso(utcnow())} {msg}"
+    print(line)
+    log_lines.append(line)
+
+
+note(f"run {run_id}: variant={variant} data_tag={data_tag} targets={target_list} expected_commit={expected_commit or '(remote head)'}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Step 1 and 2: update from Git, check the model and its data tag
+
+# CELL ********************
+
+def git_status(ws):
+    r = ok(fab.get(f"v1/workspaces/{ws}/git/status", lro_wait=True), f"git status of {ws}")
+    return r.json()
+
+
+def sync_workspace(cap):
+    ws = WORKSPACES[cap]
+    st = None
+    # The remote head can take a moment to show a fresh push. Poll, don't sleep blindly.
+    for attempt in range(12):
+        st = git_status(ws)
+        if not expected_commit or (st.get("remoteCommitHash") or "").startswith(expected_commit):
+            break
+        time.sleep(10)
+    remote, head = st.get("remoteCommitHash"), st.get("workspaceHead")
+    if expected_commit and not (remote or "").startswith(expected_commit):
+        raise HarnessStop(f"{cap}: the workspace sees remote commit {remote}, not the pushed {expected_commit}")
+
+    changes = st.get("changes", [])
+    dirty = [c for c in changes if c.get("workspaceChange") not in (None, "None")]
+    conflicts = [c for c in changes if c.get("conflictType") not in (None, "None")]
+    if dirty or conflicts:
+        lines = [f"  {c['itemMetadata'].get('displayName')} ({c['itemMetadata'].get('itemType')}): "
+                 f"workspace {c.get('workspaceChange')}, remote {c.get('remoteChange')}, conflict {c.get('conflictType')}"
+                 for c in dirty + conflicts]
+        raise HarnessStop(f"{cap}: workspace has uncommitted changes or conflicts. Commit or undo them in "
+                          f"Source control first. Nothing was updated.\n" + "\n".join(lines))
+
+    if head != remote:
+        note(f"{cap}: update from Git {head} -> {remote}")
+        body = {
+            "remoteCommitHash": remote,
+            "workspaceHead": head,
+            # No workspace changes exist (checked above), so this policy has nothing to resolve.
+            # If one appeared in between, the workspace version is kept and the tag check below stops the run.
+            "conflictResolution": {"conflictResolutionType": "Workspace", "conflictResolutionPolicy": "PreferWorkspace"},
+            "options": {"allowOverrideItems": False},
+        }
+        ok(fab.post(f"v1/workspaces/{ws}/git/updateFromGit", json=body, lro_wait=True), f"{cap}: update from Git")
+        st = git_status(ws)
+        if st.get("workspaceHead") != remote:
+            raise HarnessStop(f"{cap}: after update from Git the workspace head is {st.get('workspaceHead')}, expected {remote}")
+    else:
+        note(f"{cap}: workspace already at {remote}")
+    return st.get("workspaceHead")
+
+
+def check_model(cap):
+    ws = WORKSPACES[cap]
+    dataset_id = find_item(ws, "SemanticModel", variant)
+    params = ok(pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{dataset_id}/parameters"),
+                f"{cap}: read parameters of {variant}").json().get("value", [])
+    tags = [p.get("currentValue") for p in params if p.get("name") == "DataTag"]
+    if not tags:
+        raise HarnessStop(f"{cap}: {variant} has no DataTag parameter")
+    if tags[0] != data_tag:
+        raise HarnessStop(f"{cap}: {variant} reads back DataTag={tags[0]}, the run expects {data_tag}. "
+                          f"Was the parameter changed in the service? Change it only in TMDL and commit.")
+    note(f"{cap}: {variant} is {dataset_id}, DataTag reads back {tags[0]}")
+    return dataset_id, tags[0], {p["name"]: p.get("currentValue") for p in params}
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Step 3: full refresh through the enhanced refresh API
+
+# CELL ********************
+
+RG_PATTERN = re.compile(r"consumed memory\s*([\d,\.]+)\s*MB,\s*memory limit\s*([\d,\.]+)\s*MB,\s*"
+                        r"database size before command execution\s*([\d,\.]+)\s*MB", re.I)
+
+
+def num(s):
+    return float(s.replace(",", "")) if s else None
+
+
+def refresh(cap, dataset_id):
+    ws = WORKSPACES[cap]
+    base = f"v1.0/myorg/groups/{ws}/datasets/{dataset_id}/refreshes"
+    body = {"type": "full", "commitMode": "transactional", "maxParallelism": REFRESH_PARALLELISM, "retryCount": 0}
+    r = pbi.post(base, json=body)
+    if r.status_code != 202:
+        raise HarnessStop(f"{cap}: refresh request refused: HTTP {r.status_code} {r.text[:2000]}")
+    location = r.headers.get("Location", "")
+    request_id = location.rstrip("/").split("/")[-1] if location else r.headers.get("RequestId", "")
+    note(f"{cap}: refresh started, request {request_id}")
+
+    deadline = time.time() + float(max_refresh_minutes) * 60
+    detail, interval = {}, 10
+    while time.time() < deadline:
+        time.sleep(interval)
+        interval = min(interval + 5, 30)
+        g = pbi.get(f"{base}/{request_id}")
+        if g.status_code >= 300:
+            note(f"{cap}: poll returned HTTP {g.status_code}, retrying")
+            continue
+        detail = g.json()
+        if detail.get("status") not in ("NotStarted", "Unknown", "InProgress", None):
+            break
+    status = detail.get("status") or "Unknown"
+    if status in ("NotStarted", "Unknown", "InProgress"):
+        status = "PollTimeout"
+
+    messages = detail.get("messages") or []
+    error_text = "\n".join(str(m.get("message", "")) for m in messages if m.get("message"))
+    if not error_text and messages:
+        error_text = json.dumps(messages)
+    out = {
+        "refresh_request_id": request_id,
+        "refresh_status": status,
+        "extended_status": detail.get("extendedStatus", ""),
+        "refresh_start": detail.get("startTime"),
+        "refresh_end": detail.get("endTime"),
+        "error_text": error_text,
+        "messages_json": json.dumps(messages),
+    }
+    m = RG_PATTERN.search(error_text)
+    out["consumed_mb_from_error"] = num(m.group(1)) if m else None
+    out["limit_mb_from_error"] = num(m.group(2)) if m else None
+    out["db_size_before_mb"] = num(m.group(3)) if m else None
+    if m:
+        out["failure_kind"] = "resource governance"
+    elif "M evaluation exceeded the memory limit" in error_text:
+        out["failure_kind"] = "M evaluation memory limit"
+    elif status == "Completed":
+        out["failure_kind"] = ""
+    else:
+        out["failure_kind"] = "other"
+    out["result"] = {"Completed": "refreshed", "Failed": "failed", "Cancelled": "cancelled"}.get(status, status.lower())
+    note(f"{cap}: refresh {out['result']} ({status}) {out['failure_kind']}")
+    return out
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Steps 4 and 5: monitoring logs (F64 only)
+#
+# No request ID reaches `SemanticModelLogs`, so the refresh is matched by model ID and time:
+# the `ExecutionMetrics` event of a refresh (it has `tabularConnectionTimeoutMs`) whose `timeStart`
+# is within two minutes of the start reported by the refresh API. Queries 1, 3 and 4 are the ones in
+# `analysis/refresh-memory.kql`, narrowed to that one refresh.
+
+# CELL ********************
+
+def kql(cap, query):
+    return labs.query_kusto(query=query, kql_database=MONITORED[cap], workspace=WORKSPACES[cap])
+
+
+def kdt(s):
+    return f"datetime({s})"
+
+
+def wait_for_metrics(cap, dataset_id, start, end):
+    q = f"""
+SemanticModelLogs
+| where Timestamp > {kdt(start)} - 5m and OperationName == "ExecutionMetrics" and ItemId == "{dataset_id}"
+| extend m = parse_json(EventText)
+| where isnotnull(m.tabularConnectionTimeoutMs)
+| extend TimeStart = todatetime(m.timeStart), TimeEnd = todatetime(m.timeEnd)
+| where TimeStart between ({kdt(start)} - 2m .. {kdt(start)} + 2m)
+| project Timestamp, Model = ItemName, TimeStart, TimeEnd,
+          Result         = iff(toint(m.errorCount) > 0, "failed", "refreshed"),
+          PeakMemMB      = round(todouble(m.approximatePeakMemConsumptionKB) / 1024, 0),
+          MEnginePeakMB  = round(todouble(m.mEnginePeakMemoryKB) / 1024, 0),
+          DurationMin    = round(todouble(m.durationMs) / 60000, 2),
+          TotalCpuSec    = round(todouble(m.totalCpuTimeMs) / 1000, 0),
+          MEngineCpuSec  = round(todouble(m.mEngineCpuTimeMs) / 1000, 0),
+          VertipaqCpuSec = round(todouble(m.vertipaqJobCpuTimeMs) / 1000, 0),
+          RowsLoaded     = tolong(m.vertipaqTotalRows),
+          RefreshParallelism = toint(m.refreshParallelism)
+| order by Timestamp desc
+| take 1"""
+    deadline, interval = time.time() + float(max_log_wait_minutes) * 60, 15
+    while time.time() < deadline:
+        df = kql(cap, q)
+        if len(df):
+            note(f"{cap}: ExecutionMetrics event found")
+            return df
+        time.sleep(interval)
+        interval = min(interval + 15, 60)
+    note(f"{cap}: no ExecutionMetrics event after {max_log_wait_minutes} min")
+    return pd.DataFrame()
+
+
+def steps_query(dataset_id, start, end):
+    return f"""
+SemanticModelLogs
+| where Timestamp between ({kdt(start)} .. {kdt(end)} + 5s)
+    and OperationName == "ProgressReportEnd" and ItemId == "{dataset_id}"
+| extend Object = strcat_array(array_slice(split(XmlaObjectPath, "."), -2, -1), ".")
+| summarize DurationSec = round(sum(DurationMs) / 1000.0, 1),
+            CpuSec = round(sum(CpuTimeMs) / 1000.0, 1),
+            Rows = max(ProgressCounter)
+  by Object, OperationDetailName
+| order by DurationSec desc"""
+
+
+def failed_steps_query(dataset_id, start, end):
+    return f"""
+SemanticModelLogs
+| where Timestamp between ({kdt(start)} .. {kdt(end)} + 5s)
+    and OperationName in ("ProgressReportBegin", "ProgressReportEnd") and ItemId == "{dataset_id}"
+| summarize Began     = minif(Timestamp, OperationName == "ProgressReportBegin"),
+            Ended     = maxif(Timestamp, OperationName == "ProgressReportEnd"),
+            EndStatus = take_anyif(Status, OperationName == "ProgressReportEnd")
+  by XmlaObjectPath, OperationDetailName
+| where isnull(Ended) or EndStatus != "Succeeded"
+| extend Object = strcat_array(array_slice(split(XmlaObjectPath, "."), -2, -1), ".")
+| project Object, OperationDetailName, Began, Ended, EndStatus
+| order by Began asc"""
+
+
+def read_logs(cap, dataset_id, ref):
+    out = {"metrics": pd.DataFrame(), "steps": pd.DataFrame(), "failed_steps": pd.DataFrame()}
+    if cap not in MONITORED or not ref.get("refresh_start"):
+        return out
+    metrics = wait_for_metrics(cap, dataset_id, ref["refresh_start"], ref.get("refresh_end") or iso(utcnow()))
+    out["metrics"] = metrics
+    if not len(metrics):
+        return out
+    start, end = str(metrics.iloc[0]["TimeStart"]), str(metrics.iloc[0]["TimeEnd"])
+    # Progress events can land a little after ExecutionMetrics. On a refreshed model, wait for the Backup step.
+    for attempt in range(8):
+        steps = kql(cap, steps_query(dataset_id, start, end))
+        if ref["result"] != "refreshed" or (steps["OperationDetailName"] == "Backup").any():
+            break
+        time.sleep(15)
+    out["steps"] = steps
+    if metrics.iloc[0]["Result"] == "failed":
+        out["failed_steps"] = kql(cap, failed_steps_query(dataset_id, start, end))
+    return out
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Steps 6 and 7: compare and record
+
+# CELL ********************
+
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType
+
+ROW_SCHEMA = StructType(
+    [StructField(c, StringType()) for c in [
+        "timestamp_utc", "harness_run_id", "notebook_run_id", "variant", "data_tag", "data_tag_readback",
+        "capacity", "workspace_head", "result", "failure_kind"]]
+    + [StructField(c, DoubleType()) for c in [
+        "peak_mb", "pq_peak_mb", "consumed_mb_from_error", "limit_mb_from_error", "db_size_before_mb",
+        "duration_min", "total_cpu_sec", "mengine_cpu_sec", "vertipaq_cpu_sec", "rows_loaded",
+        "refresh_parallelism", "model_size_mb"]]
+    + [StructField(c, StringType()) for c in [
+        "model_size_source", "metrics_source", "refresh_request_id", "refresh_start_utc", "refresh_end_utc",
+        "error_text"]]
+)
+COLUMNS = [f.name for f in ROW_SCHEMA.fields]
+
+
+def history():
+    try:
+        return spark.read.format("delta").load(RUNS_TABLE).toPandas()
+    except Exception:
+        return pd.DataFrame(columns=COLUMNS)
+
+
+def model_size(cap, dataset_id, logs, ref):
+    steps = logs["steps"]
+    if len(steps):
+        backup = steps[steps["OperationDetailName"] == "Backup"]
+        if len(backup):
+            return round(float(backup["Rows"].max()) / 1048576, 1), "Backup step in SemanticModelLogs"
+    if ref["result"] == "refreshed":
+        try:
+            return round(labs.get_semantic_model_size(dataset=dataset_id, workspace=WORKSPACES[cap]) / 1048576, 1), \
+                "INFO.STORAGETABLECOLUMNSEGMENTS + dictionaries (DAX)"
+        except Exception as e:
+            note(f"{cap}: model size query failed: {e}")
+    return None, ""
+
+
+def build_row(cap, head, tag_readback, dataset_id, ref, logs):
+    def dur():
+        if ref.get("refresh_start") and ref.get("refresh_end"):
+            a = pd.Timestamp(ref["refresh_start"]); b = pd.Timestamp(ref["refresh_end"])
+            return round((b - a).total_seconds() / 60, 2)
+        return None
+    row = {c: None for c in COLUMNS}
+    row.update({
+        "timestamp_utc": iso(utcnow()), "harness_run_id": run_id, "notebook_run_id": notebook_run_id,
+        "variant": variant, "data_tag": data_tag, "data_tag_readback": tag_readback, "capacity": cap,
+        "workspace_head": head, "result": ref["result"], "failure_kind": ref["failure_kind"],
+        "consumed_mb_from_error": ref["consumed_mb_from_error"], "limit_mb_from_error": ref["limit_mb_from_error"],
+        "db_size_before_mb": ref["db_size_before_mb"], "refresh_request_id": ref["refresh_request_id"],
+        "refresh_start_utc": ref.get("refresh_start") or "", "refresh_end_utc": ref.get("refresh_end") or "",
+        "error_text": ref["error_text"], "duration_min": dur(), "metrics_source": "refresh API",
+    })
+    met = logs["metrics"]
+    if len(met):
+        m = met.iloc[0]
+        row.update({
+            "peak_mb": float(m["PeakMemMB"]), "pq_peak_mb": float(m["MEnginePeakMB"]),
+            "duration_min": float(m["DurationMin"]), "total_cpu_sec": float(m["TotalCpuSec"]),
+            "mengine_cpu_sec": float(m["MEngineCpuSec"]), "vertipaq_cpu_sec": float(m["VertipaqCpuSec"]),
+            "rows_loaded": float(m["RowsLoaded"]), "refresh_parallelism": float(m["RefreshParallelism"]),
+            "metrics_source": "SemanticModelLogs ExecutionMetrics",
+        })
+    row["model_size_mb"], row["model_size_source"] = model_size(cap, dataset_id, logs, ref)
+    return row
+
+
+def fmt(v, unit=" MB"):
+    return "n/a" if v is None or pd.isna(v) else f"{v:,.0f}{unit}"
+
+
+def compare(row, hist):
+    """Lines for the summary. Only measured numbers; nothing is estimated."""
+    lines = []
+    peak = row["peak_mb"]
+    same_tag = hist[(hist["data_tag"] == row["data_tag"]) & (hist["capacity"] == row["capacity"])]
+
+    prev = same_tag[same_tag["variant"] == row["variant"]].sort_values("timestamp_utc")
+    if len(prev):
+        p = prev.iloc[-1]
+        lines.append(f"- Previous harness run of {row['variant']} on {row['capacity']} {row['data_tag']}: "
+                     f"{p['result']}, peak {fmt(p['peak_mb'])} ({p['timestamp_utc']}).")
+        if peak is not None and pd.notna(p["peak_mb"]) and p["peak_mb"]:
+            pct = (peak - p["peak_mb"]) / p["peak_mb"] * 100
+            flag = " **FLAG: peak changed by more than 1%**" if abs(pct) > CHANGE_FLAG_PCT else ""
+            lines.append(f"  - Peak change: {peak - p['peak_mb']:+,.0f} MB ({pct:+.1f}%).{flag}")
+        if p["result"] != row["result"]:
+            lines.append(f"  - **FLAG: result changed from {p['result']} to {row['result']}**")
+    else:
+        lines.append(f"- No earlier harness run of {row['variant']} on {row['capacity']} {row['data_tag']}.")
+
+    if row["variant"] != "v00-baseline":
+        base = same_tag[(same_tag["variant"] == "v00-baseline") & (same_tag["result"] == "refreshed")]
+        base = base.sort_values("timestamp_utc")
+        if len(base) and peak is not None and pd.notna(base.iloc[-1]["peak_mb"]):
+            b = base.iloc[-1]
+            lines.append(f"- Against v00-baseline on {row['capacity']} {row['data_tag']} ({b['timestamp_utc']}): "
+                         f"peak {fmt(peak)} vs {fmt(b['peak_mb'])} ({peak - b['peak_mb']:+,.0f} MB), "
+                         f"Power Query {fmt(row['pq_peak_mb'])} vs {fmt(b['pq_peak_mb'])}, "
+                         f"model {fmt(row['model_size_mb'])} vs {fmt(b['model_size_mb'])}.")
+        else:
+            lines.append(f"- No v00-baseline harness run with a measured peak on {row['capacity']} {row['data_tag']} to compare with.")
+
+    if peak is not None:
+        fits = [f"{cap} {lim:,} MB: {'fits' if peak <= lim else 'OVER'} ({peak / lim:.0%})" for cap, lim in LIMITS_MB.items()]
+        lines.append("- Measured peak against per-model limits: " + "; ".join(fits) + ".")
+    elif row["consumed_mb_from_error"] is not None:
+        lines.append(f"- Engine cancelled at {fmt(row['consumed_mb_from_error'])} against a limit of "
+                     f"{fmt(row['limit_mb_from_error'])} (database size before the command {fmt(row['db_size_before_mb'])}).")
+    else:
+        lines.append("- No peak measured (this capacity has no monitoring and the refresh gave no memory figure).")
+    return lines
+
+
+def screenshot_hint(row):
+    if row["result"] == "refreshed":
+        return None
+    short = {"resource governance": "resource-governance", "M evaluation memory limit": "m-evaluation-memory"}.get(
+        row["failure_kind"], "refresh-error")
+    return (f"Screenshot: the refresh error of {row['variant']} on {row['capacity']} in the service "
+            f"(semantic model > Refresh history > error details), saved as "
+            f"docs/screenshots/{row['capacity'].lower()}-{row['variant']}-{short}.png")
+
+
+def spark_row(row):
+    out = []
+    for f in ROW_SCHEMA.fields:
+        v = row.get(f.name)
+        if v is None or (isinstance(v, float) and pd.isna(v)):
+            out.append(None)
+        else:
+            out.append(float(v) if isinstance(f.dataType, DoubleType) else str(v))
+    return out
+
+
+def md_table(df):
+    try:
+        return df.to_markdown(index=False)
+    except ImportError:   # tabulate missing
+        return "```\n" + df.to_string(index=False) + "\n```"
+
+
+def write_text(path, text):
+    notebookutils.fs.put(path, text, True)
+
+
+def write_csv(path, df):
+    write_text(path, df.to_csv(index=False))
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Run
+
+# CELL ********************
+
+rows, sections, stop_reason = [], [], None
+try:
+    prepared = {}
+    for cap in target_list:                      # all checks pass before any refresh starts
+        if cap not in WORKSPACES:
+            raise HarnessStop(f"unknown target {cap}; known: {', '.join(WORKSPACES)}")
+        head = sync_workspace(cap)
+        dataset_id, tag, params = check_model(cap)
+        prepared[cap] = (head, dataset_id, tag, params)
+
+    hist = history()
+    for cap in target_list:
+        head, dataset_id, tag, params = prepared[cap]
+        ref = refresh(cap, dataset_id)
+        logs = read_logs(cap, dataset_id, ref)
+        row = build_row(cap, head, tag, dataset_id, ref, logs)
+        rows.append(row)
+
+        prefix = f"{RUN_DIR}/{cap.lower()}"
+        for name in ("metrics", "steps", "failed_steps"):
+            if len(logs[name]):
+                write_csv(f"{prefix}-{name}.csv", logs[name])
+        spark.createDataFrame([spark_row(row)], ROW_SCHEMA) \
+            .write.format("delta").mode("append").save(RUNS_TABLE)   # append only, never overwrite
+
+        sec = [f"## {cap}", "",
+               f"- Result: **{row['result']}** {('(' + row['failure_kind'] + ')') if row['failure_kind'] else ''}",
+               f"- Peak {fmt(row['peak_mb'])}, Power Query {fmt(row['pq_peak_mb'])}, duration {fmt(row['duration_min'], ' min')}, "
+               f"CPU {fmt(row['total_cpu_sec'], ' s')}, rows {fmt(row['rows_loaded'], '')}, model {fmt(row['model_size_mb'])} "
+               f"({row['model_size_source'] or 'no size'})",
+               f"- Refresh request {row['refresh_request_id']}, {row['refresh_start_utc']} to {row['refresh_end_utc']}, "
+               f"workspace at {head[:7] if head else '?'}, DataTag read back {tag}",
+               f"- Numbers from: {row['metrics_source']}"]
+        sec += compare(row, hist)
+        if row["error_text"]:
+            sec += ["", "Error text:", "", "```", row["error_text"], "```"]
+        if len(logs["failed_steps"]):
+            sec += ["", "Steps running or failed when it stopped:", "", md_table(logs["failed_steps"])]
+        if len(logs["steps"]):
+            sec += ["", "Slowest steps:", "", md_table(logs["steps"].head(12))]
+        hint = screenshot_hint(row)
+        if hint:
+            sec += ["", f"**{hint}**"]
+        sections += sec + [""]
+        hist = pd.concat([hist, pd.DataFrame([row], columns=COLUMNS)], ignore_index=True)
+except HarnessStop as e:
+    stop_reason = str(e)
+    note(f"STOPPED: {stop_reason}")
+
+summary = [f"# Harness run {run_id}", "",
+           f"- Variant: {variant}", f"- Data tag: {data_tag}", f"- Targets: {', '.join(target_list)}",
+           f"- Expected commit: {expected_commit or '(remote head)'}", f"- Notebook run: {notebook_run_id}",
+           f"- Refresh parallelism requested: {REFRESH_PARALLELISM}", ""]
+if stop_reason:
+    summary += ["**Stopped before finishing:**", "", "```", stop_reason, "```", ""]
+summary += sections + ["## Log", "", "```"] + log_lines + ["```", ""]
+summary_text = "\n".join(summary)
+
+write_text(f"{RUN_DIR}/summary.md", summary_text)
+if rows:
+    write_csv(f"{RUN_DIR}/rows.csv", pd.DataFrame(rows, columns=COLUMNS))
+write_text(f"{RUN_DIR}/status.json", json.dumps({"run_id": run_id, "stopped": stop_reason, "rows": len(rows)}))
+print(summary_text)
+
+if stop_reason:
+    raise Exception(f"Harness stopped: {stop_reason}")

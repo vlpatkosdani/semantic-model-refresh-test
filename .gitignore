@@ -8,3 +8,4 @@ data/
 
 # Refresh results are measurements, not downloaded data
 !results/*.csv
+!results/**/*.csv
