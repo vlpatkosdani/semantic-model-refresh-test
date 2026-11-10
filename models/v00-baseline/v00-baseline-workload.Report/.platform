@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v00-baseline-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5fb2f4d7-a391-5d2b-9de2-d370c40a68ed"
+  }
+}

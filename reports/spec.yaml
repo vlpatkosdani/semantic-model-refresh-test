@@ -1,0 +1,137 @@
+# Query workload for the lab, one spec for every variant.
+#
+# reports/generate.py turns this into, per variant:
+#   models/<variant>/<variant>-workload.Report/   PBIR report bound to the variant's model
+#   reports/queries/<variant>.json                DAX per visual, the way the report asks for it
+#
+# Pages take the first N visuals of the pool, so a larger page contains every smaller one.
+# Fields are written as Table[Column] or Table[Measure]; the generator looks up which is which
+# in the variant's TMDL and stops if a field is missing.
+#
+# Visual types and the roles they use:
+#   card                 values: one measure
+#   clusteredColumnChart category: columns, values: measures
+#   clusteredBarChart    category: columns, values: measures
+#   lineChart            category: columns, values: measures
+#   tableEx              values: columns and measures (with a total row)
+#   pivotTable           rows: columns, columns: columns, values: measures (with totals)
+
+version: 1
+
+page:
+  width: 1280
+  height: 720
+
+pages:
+  - name: p01
+    title: 1 visual
+    visuals: 1
+  - name: p05
+    title: 5 visuals
+    visuals: 5
+  - name: p10
+    title: 10 visuals
+    visuals: 10
+  - name: p20
+    title: 20 visuals
+    visuals: 20
+
+visuals:
+  - id: v01
+    type: pivotTable
+    title: Sales by brand and year
+    rows: ["Product[Brand]"]
+    columns: ["Date[Year]"]
+    values: ["Sales[Sales Amount]"]
+  - id: v02
+    type: card
+    title: Sales amount
+    values: ["Sales[Sales Amount]"]
+  - id: v03
+    type: clusteredColumnChart
+    title: Sales by year
+    category: ["Date[Year]"]
+    values: ["Sales[Sales Amount]"]
+  - id: v04
+    type: clusteredBarChart
+    title: Sales by category
+    category: ["Product[Category]"]
+    values: ["Sales[Sales Amount]"]
+  - id: v05
+    type: tableEx
+    title: Customers by country
+    values: ["Customer[Country]", "Sales[Sales Amount]", "Sales[Margin]", "Sales[# Orders]"]
+  - id: v06
+    type: lineChart
+    title: Sales by month
+    category: ["Date[Year Month]"]
+    values: ["Sales[Sales Amount]"]
+  - id: v07
+    type: card
+    title: Orders
+    values: ["Sales[# Orders]"]
+  - id: v08
+    type: card
+    title: Margin %
+    values: ["Sales[Margin %]"]
+  - id: v09
+    type: clusteredBarChart
+    title: Quantity by store country
+    category: ["Store[Country]"]
+    values: ["Sales[Total Quantity]"]
+  - id: v10
+    type: clusteredColumnChart
+    title: Margin by continent
+    category: ["Customer[Continent]"]
+    values: ["Sales[Margin]"]
+  - id: v11
+    type: card
+    title: Total cost
+    values: ["Sales[Total Cost]"]
+  - id: v12
+    type: lineChart
+    title: Margin % by quarter
+    category: ["Date[Year Quarter]"]
+    values: ["Sales[Margin %]"]
+  - id: v13
+    type: tableEx
+    title: Subcategories
+    values: ["Product[Subcategory]", "Sales[Sales Amount]", "Sales[Total Quantity]"]
+  - id: v14
+    type: clusteredBarChart
+    title: Orders by gender
+    category: ["Customer[Gender]"]
+    values: ["Sales[# Orders]"]
+  - id: v15
+    type: pivotTable
+    title: Continent and country
+    rows: ["Customer[Continent]", "Customer[Country]"]
+    values: ["Sales[Sales Amount]", "Sales[Margin %]"]
+  - id: v16
+    type: clusteredColumnChart
+    title: Sales by weekday
+    category: ["Date[Day of Week]"]
+    values: ["Sales[Sales Amount]"]
+  - id: v17
+    type: card
+    title: Quantity
+    values: ["Sales[Total Quantity]"]
+  - id: v18
+    type: tableEx
+    title: Stores
+    values: ["Store[Name]", "Sales[Sales Amount]", "Sales[# Orders]"]
+  - id: v19
+    type: clusteredBarChart
+    title: Margin by manufacturer
+    category: ["Product[Manufacturer]"]
+    values: ["Sales[Margin]"]
+  - id: v20
+    type: pivotTable
+    title: Orders by category and continent
+    rows: ["Product[Category]"]
+    columns: ["Customer[Continent]"]
+    values: ["Sales[# Orders]"]
+# Per-variant additions for the query-time variants (v24 to v27) go here later, e.g.:
+# variants:
+#   v27-high-cardinality-visuals:
+#     extra_pages: [...]
