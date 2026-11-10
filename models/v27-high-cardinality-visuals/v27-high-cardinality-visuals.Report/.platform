@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v27-high-cardinality-visuals"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "33da2e83-3718-4893-bd7d-b65af0a273a8"
+  }
+}

@@ -310,7 +310,7 @@ def build_report(variant, spec, visuals):
             "name": pname, "displayName": p["title"], "displayOption": "FitToPage",
             "height": ph, "width": pw,
         })
-        chosen = visuals[:p["visuals"]]
+        chosen = page_visuals(p, visuals)
         for v, pos in zip(chosen, grid(len(chosen), pw, ph)):
             vj = visual_json(variant, pname, v, pos)
             write_json(d / "pages" / pname / "visuals" / vj["name"] / "visual.json", vj)
@@ -327,11 +327,27 @@ def build_report(variant, spec, visuals):
     return out
 
 
+def page_visuals(p, visuals):
+    """A page shows the first N visuals of the pool, or the visuals it lists by id."""
+    if isinstance(p["visuals"], int):
+        if p["visuals"] > len(visuals):
+            sys.exit(f"page {p['name']} asks for {p['visuals']} visuals, the pool has {len(visuals)}")
+        return visuals[:p["visuals"]]
+    by_id = {v["id"]: v for v in visuals}
+    missing = [i for i in p["visuals"] if i not in by_id]
+    if missing:
+        sys.exit(f"page {p['name']}: visuals {missing} not in the pool")
+    return [by_id[i] for i in p["visuals"]]
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     variant = sys.argv[1]
     spec = yaml.safe_load(SPEC.read_text(encoding="utf-8"))
+    extra = (spec.get("variants") or {}).get(variant, {})
+    spec["visuals"] = spec["visuals"] + extra.get("visuals", [])
+    spec["pages"] = spec["pages"] + extra.get("pages", [])
     model = read_model(variant)
 
     visuals = []
@@ -340,9 +356,8 @@ def main():
             sys.exit(f"{v['id']}: unknown visual type {v['type']}")
         fields = {k: [resolve(model, r) for r in v.get(k, [])] for k in ROLES[v["type"]]}
         visuals.append({**v, "fields": fields})
-    needed = max(p["visuals"] for p in spec["pages"])
-    if needed > len(visuals):
-        sys.exit(f"a page asks for {needed} visuals, the pool has {len(visuals)}")
+    for p in spec["pages"]:
+        page_visuals(p, visuals)   # stops on a page that asks for visuals the pool does not have
 
     report = build_report(variant, spec, visuals)
 
@@ -351,7 +366,7 @@ def main():
         queries["visuals"][v["id"]] = {"type": v["type"], "title": v["title"],
                                        "visual_name": None, "dax": dax_for(v)}
     for p in spec["pages"]:
-        ids = [v["id"] for v in visuals[:p["visuals"]]]
+        ids = [v["id"] for v in page_visuals(p, visuals)]
         queries["pages"][p["name"]] = {
             "title": p["title"], "visuals": ids,
             "visual_names": {i: stable_id(variant, p["name"], i) for i in ids},

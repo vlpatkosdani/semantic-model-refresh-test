@@ -131,7 +131,36 @@ visuals:
     rows: ["Product[Category]"]
     columns: ["Customer[Continent]"]
     values: ["Sales[# Orders]"]
-# Per-variant additions for the query-time variants (v24 to v27) go here later, e.g.:
-# variants:
-#   v27-high-cardinality-visuals:
-#     extra_pages: [...]
+
+# Per-variant additions. A variant gets the pages above plus its own; its visuals join the pool.
+# A page lists visual ids instead of a count when it is not "the first N of the pool".
+variants:
+  v27-high-cardinality-visuals:
+    visuals:
+      - id: h01
+        type: tableEx
+        title: Orders
+        values: ["Sales[Order Number]", "Sales[Sales Amount]", "Sales[Total Quantity]"]
+      - id: h02
+        type: tableEx
+        title: Customers
+        values: ["Customer[Name]", "Customer[City]", "Sales[Sales Amount]", "Sales[# Orders]"]
+      - id: h03
+        type: tableEx
+        title: Order lines
+        values: ["Sales[Order Number]", "Sales[Line Number]", "Product[Product Name]", "Sales[Sales Amount]"]
+      - id: h04
+        type: pivotTable
+        title: Customers by year
+        rows: ["Customer[Name]"]
+        columns: ["Date[Year]"]
+        values: ["Sales[Sales Amount]"]
+      - id: h05
+        type: clusteredBarChart
+        title: Sales by product
+        category: ["Product[Product Name]"]
+        values: ["Sales[Sales Amount]"]
+    pages:
+      - name: p27
+        title: High cardinality
+        visuals: [h01, h02, h03, h04, h05]

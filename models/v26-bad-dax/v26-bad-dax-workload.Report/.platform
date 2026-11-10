@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v26-bad-dax-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1f5a22be-4180-5ca1-b696-31a7c8e0758c"
+  }
+}
