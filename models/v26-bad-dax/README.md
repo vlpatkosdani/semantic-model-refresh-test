@@ -33,4 +33,10 @@ Refresh memory is not affected: measures are not computed during refresh. The qu
 
 ## Results
 
-Not run yet.
+| Capacity | Data | Run | Result | Peak MB | Power Query MB | Duration | Model size |
+|---|---|---|---|---|---|---|---|
+| F64 | 1M | harness, 2026-11-10 | refreshed | 715 | 689 | 0.6 min | 73 MB |
+
+Refresh is the same as the baseline, as expected: the peak is inside the baseline's range on F64 (551 to 785 MB over four runs) and the model is the same size.
+
+Same results: all six measures by `Date[Year]` (11 years) returned identical values on v00-baseline and v26 on 2026-11-10.
