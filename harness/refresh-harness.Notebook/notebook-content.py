@@ -469,7 +469,20 @@ def traced_refresh(cap, dataset_id):
     """Start a trace on the model, run the same enhanced refresh as everywhere else, stop the trace."""
     ws = WORKSPACES[cap]
     out = {"metrics": pd.DataFrame(), "steps": pd.DataFrame(), "failed_steps": pd.DataFrame(), "trace": pd.DataFrame()}
-    with fabric.create_trace_connection(dataset_id, workspace=ws) as conn:
+    try:
+        conn = fabric.create_trace_connection(dataset_id, workspace=ws)
+    except Exception as e:
+        raise HarnessStop(f"{cap}: could not open a trace connection to {variant} (semantic-link opens it "
+                          f"read/write, so the workspace's XMLA endpoint must allow read/write): "
+                          f"{type(e).__name__}: {str(e)[:1500]}")
+    with conn:
+        try:
+            schema = conn.discover_event_schema()
+            for ev in TRACE_COLUMNS:
+                hit = schema[schema.iloc[:, 0].astype(str).str.replace(" ", "") == ev] if len(schema) else schema
+                note(f"{cap}: trace event {ev}: {'available' if len(hit) else 'not listed'}")
+        except Exception as e:
+            note(f"{cap}: could not list trace events: {str(e)[:300]}")
         trace, used = None, None
         for name, schema in TRACE_SCHEMAS:
             try:
@@ -999,6 +1012,10 @@ try:
 except HarnessStop as e:
     stop_reason = str(e)
     note(f"STOPPED: {stop_reason}")
+except Exception as e:   # anything unexpected still ends in a summary with the traceback
+    import traceback
+    stop_reason = f"unexpected error: {type(e).__name__}: {e}\n\n{traceback.format_exc()[-4000:]}"
+    note(f"STOPPED: {type(e).__name__}: {str(e)[:500]}")
 
 summary = [f"# Harness run {run_id}", "",
            f"- Task: {task}", f"- Variant: {variant}", f"- Data tag: {data_tag}", f"- Targets: {', '.join(target_list)}",
