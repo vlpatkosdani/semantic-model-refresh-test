@@ -30,7 +30,7 @@ What the driver does:
 
 What the notebook does, per target:
 
-1. Git status of the workspace. Stops on uncommitted changes or conflicts, and if the workspace does not see the pushed commit. Otherwise runs Update from Git. It never resolves a conflict: the check runs before the update, and nothing is overwritten.
+1. Git status of the workspace. Stops on uncommitted changes or conflicts, and if the workspace does not see the pushed commit. Otherwise runs Update from Git. It never resolves a conflict: the check runs before the update, so the only thing the update replaces is the previous committed version of an item. Fabric needs explicit consent for that (`allowOverrideItems`), which the harness gives.
 2. Finds the semantic model by name and reads `DataTag` back through the REST parameters API. Stops if it differs from the committed value.
 3. All targets pass steps 1 and 2 before any refresh starts. Then the targets refresh one after the other.
 4. Full refresh through the enhanced refresh API: `type full`, transactional, `maxParallelism 6` (what the service used for the manual runs), no retries. Polls until it ends. Records the request ID, start, end, status and the full error text. From the error text it reads consumed memory, memory limit and database size, and whether it is the Power Query error "The M evaluation exceeded the memory limit".

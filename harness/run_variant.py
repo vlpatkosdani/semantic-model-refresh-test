@@ -170,7 +170,7 @@ def sync_harness_workspace(commit):
         fabric("POST", f"/workspaces/{HARNESS_WS}/git/updateFromGit", {
             "remoteCommitHash": st["remoteCommitHash"], "workspaceHead": st.get("workspaceHead"),
             "conflictResolution": {"conflictResolutionType": "Workspace", "conflictResolutionPolicy": "PreferWorkspace"},
-            "options": {"allowOverrideItems": False}}, lro=True)
+            "options": {"allowOverrideItems": True}}, lro=True)
     else:
         print(f"F64: workspace already at {commit[:7]}")
 

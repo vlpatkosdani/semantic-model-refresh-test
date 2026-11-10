@@ -182,8 +182,9 @@ def sync_workspace(cap):
             "workspaceHead": head,
             # No workspace changes exist (checked above), so this policy has nothing to resolve.
             # If one appeared in between, the workspace version is kept and the tag check below stops the run.
+            # allowOverrideItems is the consent Fabric needs to apply incoming changes to existing items.
             "conflictResolution": {"conflictResolutionType": "Workspace", "conflictResolutionPolicy": "PreferWorkspace"},
-            "options": {"allowOverrideItems": False},
+            "options": {"allowOverrideItems": True},
         }
         ok(fab.post(f"v1/workspaces/{ws}/git/updateFromGit", json=body, lro_wait=True), f"{cap}: update from Git")
         st = git_status(ws)
