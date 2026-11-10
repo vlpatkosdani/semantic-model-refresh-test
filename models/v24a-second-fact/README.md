@@ -27,4 +27,25 @@ It isolates the cost of the second fact table itself, so v24b can show what the 
 
 ## Results
 
-Not run yet.
+F64, 1M, harness runs on 2026-11-10.
+
+Refresh (run `20261110T150725Z-v24a-f994`): peak 933 MB, Power Query 911 MB, 1 min, 3,541,806 rows, model 103 MB. The baseline peaked at 551 to 785 MB over four runs with a 73 MB model. The Orders table adds 30 MB to the model. The peak is above the baseline's range, almost all of it in Power Query, but it is one run and the baseline's own Power Query peaks spread over more than 300 MB.
+
+Query workload (run `20261110T151413Z-v24a-c285`, 1,100 queries, none failed). Medians over 5 repeats, cold cache, all visuals at once:
+
+| Page | Slowest visual | CPU | Peak per query |
+|---|---|---|---|
+| p20 | 719 ms (v00: 672 ms) | 2,017 ms (v00: 2,033 ms) | 55 MB (v00: 58 MB) |
+| pf | 62 ms (v00: 63 ms) | 233 ms (v00: 220 ms) | 12 MB (v00: 12 MB) |
+| po | 16 ms | 48 ms | 6 MB |
+
+What the Orders page shows (checked with DAX on 2026-11-10):
+
+| Filter | Order Count |
+|---|---|
+| none | 980,666 |
+| Germany | 111,258 |
+| Computers | 980,666 |
+| Computers and Germany | 111,258 |
+
+The Category slicer does not filter Orders, because Product has no relationship path to Orders. The Country slicer does, through Customer. This is what single-direction relationships give, and the report shows it without any warning.
