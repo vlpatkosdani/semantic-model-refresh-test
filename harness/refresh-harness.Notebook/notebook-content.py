@@ -21,7 +21,7 @@
 
 variant = "v00-baseline"      # model folder and semantic model name
 data_tag = "data-1m-v1"       # DataTag committed in the variant's TMDL; the model must read back the same value
-targets = "F64"               # comma separated: F2, F64. Refreshed one after the other, in this order
+targets = "F64"               # comma separated: F2, F64, PPU. Refreshed one after the other, in this order
 expected_commit = ""          # commit the driver pushed; empty means whatever the remote branch has
 harness_run_id = ""           # set by the driver; empty means generate one
 max_refresh_minutes = "120"   # stop polling the refresh after this many minutes
@@ -70,7 +70,12 @@ import notebookutils
 WORKSPACES = {
     "F2": "58b05b2a-00d2-45df-9034-0a044bb3d162",
     "F64": "a1a434d3-4b0b-46d2-a4a2-147e3aff9e77",
+    # Premium Per User, 100 GB per model. Not connected to Git and not a Fabric capacity, so it has no
+    # workspace monitoring: the model is published from Desktop, and the refresh is measured with a trace.
+    "PPU": "5f59a539-09dd-480f-a4ae-24f374b0e7aa",
 }
+NO_GIT = {"PPU"}       # targets whose models are published by hand, not synced from Git
+TRACED = {"PPU"}       # targets measured with an XMLA trace instead of SemanticModelLogs
 HARNESS_WORKSPACE = WORKSPACES["F64"]   # where this notebook and harness_lake live
 LAKEHOUSE_NAME = "harness_lake"
 MONITORED = {"F64": "82e1f4b3-28ac-4c62-a7bd-6d6846b2032e"}   # capacity -> Monitoring KQL database ID
@@ -78,7 +83,7 @@ REFRESH_PARALLELISM = 6   # what the manual service refreshes used, so results c
 
 # Per-model refresh memory limits in MB. F2 is the measured limit from the error messages.
 # F16, F32 and F64 are the documented limits (F64 errors showed 25,592 to 25,593 MB).
-LIMITS_MB = {"F2": 3066, "F16": 5120, "F32": 10240, "F64": 25600}
+LIMITS_MB = {"F2": 3066, "F16": 5120, "F32": 10240, "F64": 25600, "PPU": 102400}
 CHANGE_FLAG_PCT = 1.0
 
 fab = fabric.FabricRestClient()
@@ -160,6 +165,9 @@ def git_status(ws):
 
 def sync_workspace(cap):
     ws = WORKSPACES[cap]
+    if cap in NO_GIT:
+        note(f"{cap}: not connected to Git; the model there is the one published by hand")
+        return ""
     st = None
     # The remote head can take a moment to show a fresh push. Poll, don't sleep blindly.
     for attempt in range(12):
@@ -201,9 +209,18 @@ def sync_workspace(cap):
     return st.get("workspaceHead")
 
 
+def find_dataset(ws, name):
+    """Through the Power BI API, which also lists models in workspaces that are not on a Fabric capacity."""
+    hits = [d["id"] for d in ok(pbi.get(f"v1.0/myorg/groups/{ws}/datasets"), f"list datasets in {ws}").json()["value"]
+            if d["name"] == name]
+    if len(hits) != 1:
+        raise HarnessStop(f"semantic model '{name}' found {len(hits)} times in workspace {ws}")
+    return hits[0]
+
+
 def check_model(cap):
     ws = WORKSPACES[cap]
-    dataset_id = find_item(ws, "SemanticModel", variant)
+    dataset_id = find_dataset(ws, variant) if cap in NO_GIT else find_item(ws, "SemanticModel", variant)
     params = ok(pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{dataset_id}/parameters"),
                 f"{cap}: read parameters of {variant}").json().get("value", [])
     tags = [p.get("currentValue") for p in params if p.get("name") == "DataTag"]
@@ -375,6 +392,110 @@ SemanticModelLogs
 | extend Object = strcat_array(array_slice(split(XmlaObjectPath, "."), -2, -1), ".")
 | project Object, OperationDetailName, Began, Ended, EndStatus
 | order by Began asc"""
+
+
+# Targets without workspace monitoring (PPU) are measured with an XMLA trace that runs during the refresh.
+# The trace delivers the same ExecutionMetrics event the monitoring logs get, as JSON in its text column.
+TRACE_COLUMNS = {
+    "ProgressReportEnd": ["EventClass", "EventSubclass", "CurrentTime", "StartTime", "EndTime", "Duration",
+                          "CpuTime", "ObjectName", "ObjectPath", "IntegerData", "TextData", "Success"],
+    "CommandEnd": ["EventClass", "EventSubclass", "CurrentTime", "StartTime", "EndTime", "Duration", "CpuTime",
+                   "TextData", "Success", "Error"],
+    "Error": ["EventClass", "CurrentTime", "TextData"],
+    "ExecutionMetrics": ["EventClass", "CurrentTime", "TextData"],
+}
+# Fallbacks if the trace API refuses a column or an event; the summary says which one was used.
+TRACE_SCHEMAS = [
+    ("full", TRACE_COLUMNS),
+    ("minimal columns", {e: ["EventClass", "CurrentTime", "TextData"] for e in TRACE_COLUMNS}),
+    ("without ExecutionMetrics", {e: c for e, c in TRACE_COLUMNS.items() if e != "ExecutionMetrics"}),
+]
+
+
+def norm_cols(df):
+    df = df.copy()
+    df.columns = [re.sub(r"[^a-z]", "", str(c).lower()) for c in df.columns]
+    return df
+
+
+def metrics_from_trace(df):
+    if not len(df) or "textdata" not in df or "eventclass" not in df:
+        return pd.DataFrame()
+    rows = []
+    for _, r in df[df["eventclass"].astype(str).str.contains("ExecutionMetrics|136", regex=True)].iterrows():
+        try:
+            m = json.loads(r["textdata"])
+        except Exception:
+            continue
+        if "approximatePeakMemConsumptionKB" not in m or "mEnginePeakMemoryKB" not in m:
+            continue   # a query's metrics, not the refresh's
+        rows.append({
+            "Timestamp": r.get("currenttime"), "Model": variant,
+            "TimeStart": m.get("timeStart"), "TimeEnd": m.get("timeEnd"),
+            "Result": "failed" if int(m.get("errorCount") or 0) > 0 else "refreshed",
+            "PeakMemMB": round(float(m["approximatePeakMemConsumptionKB"]) / 1024, 0),
+            "MEnginePeakMB": round(float(m.get("mEnginePeakMemoryKB") or 0) / 1024, 0),
+            "DurationMin": round(float(m.get("durationMs") or 0) / 60000, 2),
+            "TotalCpuSec": round(float(m.get("totalCpuTimeMs") or 0) / 1000, 0),
+            "MEngineCpuSec": round(float(m.get("mEngineCpuTimeMs") or 0) / 1000, 0),
+            "VertipaqCpuSec": round(float(m.get("vertipaqJobCpuTimeMs") or 0) / 1000, 0),
+            "RowsLoaded": float(m.get("vertipaqTotalRows") or 0),
+            "RefreshParallelism": float(m.get("refreshParallelism") or 0),
+        })
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values("PeakMemMB", ascending=False).head(1).reset_index(drop=True)
+
+
+def steps_from_trace(df):
+    if not len(df) or "eventclass" not in df:
+        return pd.DataFrame()
+    p = df[df["eventclass"].astype(str).str.contains("ProgressReportEnd|^6$", regex=True)].copy()
+    if not len(p):
+        return pd.DataFrame()
+    obj = p["objectpath"].astype(str) if "objectpath" in p else p.get("objectname", pd.Series("", index=p.index)).astype(str)
+    p["Object"] = obj.str.split(".").str[-2:].str.join(".")
+    p["OperationDetailName"] = p["eventsubclass"].astype(str) if "eventsubclass" in p else ""
+    for c in ("duration", "cputime", "integerdata"):
+        p[c] = pd.to_numeric(p[c], errors="coerce") if c in p else np.nan
+    return (p.groupby(["Object", "OperationDetailName"], as_index=False)
+             .agg(DurationSec=("duration", lambda s: round(s.sum() / 1000, 1)),
+                  CpuSec=("cputime", lambda s: round(s.sum() / 1000, 1)),
+                  Rows=("integerdata", "max"))
+             .sort_values("DurationSec", ascending=False))
+
+
+def traced_refresh(cap, dataset_id):
+    """Start a trace on the model, run the same enhanced refresh as everywhere else, stop the trace."""
+    ws = WORKSPACES[cap]
+    out = {"metrics": pd.DataFrame(), "steps": pd.DataFrame(), "failed_steps": pd.DataFrame(), "trace": pd.DataFrame()}
+    with fabric.create_trace_connection(dataset_id, workspace=ws) as conn:
+        trace, used = None, None
+        for name, schema in TRACE_SCHEMAS:
+            try:
+                trace = conn.create_trace(schema, f"lab-{run_id}")
+                used = name
+                break
+            except Exception as e:
+                note(f"{cap}: trace schema '{name}' refused: {str(e)[:300]}")
+        if trace is None:
+            raise HarnessStop(f"{cap}: could not create a trace on {variant}")
+        with trace:
+            trace.start()
+            note(f"{cap}: trace started ({used})")
+            ref = refresh(cap, dataset_id)
+            time.sleep(30)   # the ExecutionMetrics event comes a little after the refresh ends
+            raw = trace.stop()
+    raw = norm_cols(raw if isinstance(raw, pd.DataFrame) else pd.DataFrame(raw))
+    note(f"{cap}: trace captured {len(raw)} events: " +
+         ", ".join(f"{k} {v}" for k, v in raw["eventclass"].astype(str).value_counts().items()) if len(raw) else
+         f"{cap}: trace captured no events")
+    out["trace"] = raw
+    out["metrics"] = metrics_from_trace(raw)
+    out["steps"] = steps_from_trace(raw)
+    if not len(out["metrics"]):
+        note(f"{cap}: no refresh ExecutionMetrics event in the trace")
+    return ref, out
 
 
 def read_logs(cap, dataset_id, ref):
@@ -838,14 +959,19 @@ try:
 
     for cap in (target_list if task == "refresh" else []):
         head, dataset_id, tag, params = prepared[cap]
-        ref = refresh(cap, dataset_id)
-        logs = read_logs(cap, dataset_id, ref)
+        if cap in TRACED:
+            ref, logs = traced_refresh(cap, dataset_id)
+        else:
+            ref = refresh(cap, dataset_id)
+            logs = read_logs(cap, dataset_id, ref)
         row = build_row(cap, head, tag, dataset_id, ref, logs)
+        if cap in TRACED and len(logs["metrics"]):
+            row["metrics_source"] = "XMLA trace ExecutionMetrics"
         rows.append(row)
 
         prefix = f"{RUN_DIR}/{cap.lower()}"
-        for name in ("metrics", "steps", "failed_steps"):
-            if len(logs[name]):
+        for name in ("metrics", "steps", "failed_steps", "trace"):
+            if len(logs.get(name, [])):
                 write_csv(f"{prefix}-{name}.csv", logs[name])
         spark.createDataFrame([spark_row(row)], ROW_SCHEMA) \
             .write.format("delta").mode("append").save(RUNS_TABLE)   # append only, never overwrite

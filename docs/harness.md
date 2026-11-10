@@ -58,14 +58,16 @@ The request ID of the refresh API does not appear in `SemanticModelLogs`, and th
 
 ## What is measured where
 
-| Number | F64 | F2 |
-|---|---|---|
-| Peak memory, Power Query peak, CPU, rows | `ExecutionMetrics` | not available (no monitoring) |
-| Duration | `ExecutionMetrics` | start and end from the refresh API |
-| Model size | `Backup` step in the logs | DAX over `INFO.STORAGETABLECOLUMNSEGMENTS` and dictionaries, only if refreshed |
-| Memory at cancellation | error text | error text |
+| Number | F64 | F2 | PPU |
+|---|---|---|---|
+| Peak memory, Power Query peak, CPU, rows | `ExecutionMetrics` | not available (no monitoring) | `ExecutionMetrics` from an XMLA trace |
+| Duration | `ExecutionMetrics` | start and end from the refresh API | `ExecutionMetrics` from the trace |
+| Model size | `Backup` step in the logs | DAX over `INFO.STORAGETABLECOLUMNSEGMENTS` and dictionaries, only if refreshed | DAX, as on F2 |
+| Memory at cancellation | error text | error text | error text |
 
 The two model sizes are not the same measure. The column `model_size_source` says which one a row has.
+
+PPU is a Premium Per User workspace (100 GB per model) for the models that do not fit F64's 25.6 GB. It is not connected to Git and has no workspace monitoring. The model is published there from Desktop by hand, the harness skips the Git update for it, and the notebook (running on F64) opens a trace on the model through semantic-link, runs the same enhanced refresh, and reads the refresh's `ExecutionMetrics` event and the `ProgressReportEnd` steps from the trace. The raw trace is saved as `ppu-trace.csv` in the run folder. PPU runs are recorded with capacity `PPU` and are not mixed with F64 runs: PPU runs on shared hardware.
 
 ## 1M and 10M
 
