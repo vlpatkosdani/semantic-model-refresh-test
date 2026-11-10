@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v25-many-to-many"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "3023ff7e-9681-4068-bd4c-454f557fea2d"
+  }
+}
