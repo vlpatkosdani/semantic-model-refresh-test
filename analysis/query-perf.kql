@@ -1,0 +1,143 @@
+// Query performance analysis for the semantic model refresh lab.
+//
+// For Fabric workspace monitoring: SemanticModelLogs in the Monitoring KQL database of the F64
+// lab workspace. Paste into a KQL queryset, put the cursor in one query and press Run.
+//
+// The harness query runner (task "queries", see docs/harness.md) starts every query with an unused
+// variable that names the run, page, visual, cache mode, concurrency and repeat:
+//
+//   DEFINE VAR __LabTag = "run=20261110T103141Z-v00-5b3b;page=p20;visual=v01;mode=cold;conc=page;rep=3"
+//
+// Comments do not reach SemanticModelLogs, the variable does. All events of one query (QueryBegin,
+// the storage engine scans, QueryEnd, ExecutionMetrics) share one OperationId.
+//
+// Units: ms, and MB of 1,048,576 bytes. rep 0 is the unmeasured warm-up of a warm series.
+
+// ---------------------------------------------------------------------------
+// 1. Harness runs: one row per run and model
+// ---------------------------------------------------------------------------
+SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "QueryEnd" and EventText contains "__LabTag"
+| extend Tag = extract(@'__LabTag\s*=\s*"([^"]+)"', 1, EventText)
+| extend Run = extract(@"run=([^;]+)", 1, Tag)
+| where isnotempty(Run)
+| summarize Queries = count(), Failed = countif(Status != "Succeeded"),
+            First = min(Timestamp), Last = max(Timestamp)
+  by Run, Model = ItemName
+| order by First desc
+
+// ---------------------------------------------------------------------------
+// 2. One row per query of one run
+// ---------------------------------------------------------------------------
+// Set Run to a run id from query 1.
+let Run = "20261110T103141Z-v00-5b3b";
+let Q = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "QueryEnd" and EventText contains strcat("run=", Run, ";")
+| extend Tag = extract(@'__LabTag\s*=\s*"([^"]+)"', 1, EventText)
+| project OperationId, Model = ItemName, Timestamp, ServerMs = DurationMs, CpuMs = CpuTimeMs, Status, Tag;
+let M = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "ExecutionMetrics"
+| extend j = parse_json(EventText)
+| where isnull(j.tabularConnectionTimeoutMs)
+| summarize PeakMemMB = round(max(todouble(j.approximatePeakMemConsumptionKB)) / 1024, 1),
+            ResultRows = max(tolong(j.queryResultRows)), DelayMs = max(tolong(j.executionDelayMs))
+  by OperationId;
+let SE = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName startswith "VertiPaqSEQuery"
+| summarize SEQueries = countif(OperationName == "VertiPaqSEQueryEnd" and OperationDetailName == "VertiPaqScan"),
+            SECacheHits = countif(OperationName == "VertiPaqSEQueryCacheMatch")
+  by OperationId;
+Q
+| join kind=leftouter M on OperationId
+| join kind=leftouter SE on OperationId
+| extend Page = extract(@"page=([^;]+)", 1, Tag), Visual = extract(@"visual=([^;]+)", 1, Tag),
+         Mode = extract(@"mode=([^;]+)", 1, Tag), Conc = extract(@"conc=([^;]+)", 1, Tag),
+         Rep = toint(extract(@"rep=([^;]+)", 1, Tag))
+| project Timestamp, Model, Page, Visual, Mode, Conc, Rep, ServerMs, CpuMs, PeakMemMB, ResultRows,
+          DelayMs, SEQueries, SECacheHits, Status
+| order by Page asc, Mode asc, Conc asc, Rep asc, Visual asc
+
+// ---------------------------------------------------------------------------
+// 3. Per page: median and p90 over the repeats, all harness runs of a model
+// ---------------------------------------------------------------------------
+// A page render is all visuals of one page with the same mode, concurrency and repeat.
+// SlowestMs is the slowest visual (what a user waits for when all visuals load at once),
+// CpuMs the work for the whole page, PeakMemMB the largest single query.
+let ModelName = "v00-baseline";
+let Q = SemanticModelLogs
+| where Timestamp > ago(30d) and ItemName == ModelName and OperationName == "QueryEnd" and EventText contains "__LabTag"
+| extend Tag = extract(@'__LabTag\s*=\s*"([^"]+)"', 1, EventText)
+| project OperationId, ServerMs = DurationMs, CpuMs = CpuTimeMs, Tag;
+let M = SemanticModelLogs
+| where Timestamp > ago(30d) and ItemName == ModelName and OperationName == "ExecutionMetrics"
+| extend j = parse_json(EventText)
+| where isnull(j.tabularConnectionTimeoutMs)
+| summarize PeakKB = max(todouble(j.approximatePeakMemConsumptionKB)) by OperationId;
+Q
+| join kind=leftouter M on OperationId
+| extend Run = extract(@"run=([^;]+)", 1, Tag), Page = extract(@"page=([^;]+)", 1, Tag),
+         Mode = extract(@"mode=([^;]+)", 1, Tag), Conc = extract(@"conc=([^;]+)", 1, Tag),
+         Rep = toint(extract(@"rep=([^;]+)", 1, Tag))
+| where Rep > 0
+| summarize SlowestMs = max(ServerMs), CpuMs = sum(CpuMs), PeakMemMB = max(PeakKB) / 1024
+  by Run, Page, Mode, Conc, Rep
+| summarize Renders = count(),
+            SlowestMedianMs = percentile(SlowestMs, 50), SlowestP90Ms = percentile(SlowestMs, 90),
+            CpuMedianMs = percentile(CpuMs, 50), PeakMemMB = round(max(PeakMemMB), 1)
+  by Page, Mode, Conc
+| order by Page asc, Mode asc, Conc asc
+
+// ---------------------------------------------------------------------------
+// 4. Compare models: cold page renders, all at once
+// ---------------------------------------------------------------------------
+// The same page on every model that has harness query runs. The difference to v00-baseline is
+// what the model design costs at query time.
+let Q = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "QueryEnd" and EventText contains "__LabTag"
+| extend Tag = extract(@'__LabTag\s*=\s*"([^"]+)"', 1, EventText)
+| where Tag contains "mode=cold" and Tag contains "conc=page" and not(Tag contains "rep=0")
+| project OperationId, Model = ItemName, ServerMs = DurationMs, CpuMs = CpuTimeMs, Tag;
+let M = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "ExecutionMetrics"
+| extend j = parse_json(EventText)
+| where isnull(j.tabularConnectionTimeoutMs)
+| summarize PeakKB = max(todouble(j.approximatePeakMemConsumptionKB)) by OperationId;
+Q
+| join kind=leftouter M on OperationId
+| extend Run = extract(@"run=([^;]+)", 1, Tag), Page = extract(@"page=([^;]+)", 1, Tag),
+         Rep = toint(extract(@"rep=([^;]+)", 1, Tag))
+| summarize SlowestMs = max(ServerMs), CpuMs = sum(CpuMs), PeakMemMB = max(PeakKB) / 1024 by Model, Run, Page, Rep
+| summarize SlowestMedianMs = percentile(SlowestMs, 50), CpuMedianMs = percentile(CpuMs, 50),
+            PeakMemMB = round(max(PeakMemMB), 1), Renders = count()
+  by Model, Page
+| order by Page asc, Model asc
+
+// ---------------------------------------------------------------------------
+// 5. Slowest visuals: which queries carry a page
+// ---------------------------------------------------------------------------
+let ModelName = "v00-baseline";
+SemanticModelLogs
+| where Timestamp > ago(30d) and ItemName == ModelName and OperationName == "QueryEnd" and EventText contains "__LabTag"
+| extend Tag = extract(@'__LabTag\s*=\s*"([^"]+)"', 1, EventText)
+| extend Visual = extract(@"visual=([^;]+)", 1, Tag), Mode = extract(@"mode=([^;]+)", 1, Tag),
+         Rep = toint(extract(@"rep=([^;]+)", 1, Tag))
+| where Rep > 0
+| summarize MedianMs = percentile(DurationMs, 50), P90Ms = percentile(DurationMs, 90),
+            MedianCpuMs = percentile(CpuTimeMs, 50), Queries = count()
+  by Visual, Mode
+| order by Mode asc, MedianMs desc
+
+// ---------------------------------------------------------------------------
+// 6. Failed queries with their error
+// ---------------------------------------------------------------------------
+let Q = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "QueryEnd" and EventText contains "__LabTag" and Status != "Succeeded"
+| extend Tag = extract(@'__LabTag\s*=\s*"([^"]+)"', 1, EventText)
+| project OperationId, Timestamp, Model = ItemName, Status, StatusCode, ServerMs = DurationMs, Tag;
+let E = SemanticModelLogs
+| where Timestamp > ago(30d) and OperationName == "Error"
+| summarize ErrorText = take_any(EventText) by OperationId;
+Q
+| join kind=leftouter E on OperationId
+| project Timestamp, Model, Tag, Status, StatusCode, ServerMs, ErrorText
+| order by Timestamp desc
