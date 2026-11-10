@@ -60,6 +60,6 @@ Query workload (run `20261110T130235Z-v22-817d`, all 792 queries succeeded), com
 | p05 | all at once | 141 ms | 141 ms | 328 ms | 328 ms | 14 MB | 14 MB |
 | p10 | all at once | 141 ms | 156 ms | 360 ms | 407 ms | 14 MB | 14 MB |
 | p20 | all at once | 672 ms | 1,047 ms | 2,033 ms | 2,625 ms | 58 MB | 58 MB |
-| p20 | one by one | 641 ms | 782 ms | 1,906 ms | 2,063 ms | 58 MB | 58 MB |
+| p20 | one by one | 641 ms | 782 ms | 1,906 ms | 2,236 ms | 58 MB | 58 MB |
 
 The slowest visual on p20 is v20 (orders by category and continent) on both models. It took 1,047 ms on v22 against 672 ms on v00 when all 20 visuals ran at once, and 782 ms against 641 ms one by one. The other visuals that group over Sales (v05, v14, v18) were also 50 to 100 ms slower when run at once. No visual uses the calculated columns. For comparison, v27, an unchanged copy of the baseline, measured 766 ms for v20 on the same page. This is one run per model, so a repeat run of v00 and v22 is needed before calling the difference an effect of the wider Sales table.
