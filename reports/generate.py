@@ -147,13 +147,58 @@ def rollup_levels(cols, total):
     return f"ROLLUPADDISSUBTOTAL({args})", flags
 
 
-def dax_for(v):
+def dax_literal(x):
+    if isinstance(x, bool):
+        return "TRUE" if x else "FALSE"
+    if isinstance(x, (int, float)):
+        return str(x)
+    return '"' + str(x).replace('"', '""') + '"'
+
+
+def filter_vars(filters):
+    """Slicer selections as Desktop passes them: one TREATAS table per slicer, defined first."""
+    names, defs = [], []
+    for i, (f, selected) in enumerate(filters):
+        name = "__DS0FilterTable" + (str(i + 1) if i else "")
+        names.append(name)
+        values = ", ".join(dax_literal(x) for x in selected)
+        defs.append(f"\tVAR {name} =\n\t\tTREATAS({{{values}}}, {dax_col(f)})\n")
+    return names, "".join(defs)
+
+
+def dax_for(v, filters=()):
+    """filters: (field, selected values) of the slicers that filter this visual."""
+    filters = list(filters)
+    body = dax_body(v, filters)
+    _, defs = filter_vars(filters)
+    if not defs:
+        return body
+    if body.startswith("DEFINE\n"):
+        return "DEFINE\n" + defs + body[len("DEFINE\n"):]
+    return "DEFINE\n" + defs + body
+
+
+def dax_body(v, filters):
     t = v["type"]
-    meas = [f for f in v["fields"]["values"] if f["kind"] == "measure"]
+    meas = [f for f in v["fields"].get("values", []) if f["kind"] == "measure"]
+    fnames, _ = filter_vars(filters)
+    ft = "".join(n + ", " for n in fnames)   # filter tables go between the groups and the measures
     m_args = ", ".join(f'"{alias(f)}", {dax_col(f)}' for f in meas)
 
     if t == "card":
+        if filters:
+            m_ign = ", ".join(f'"{alias(f)}", IGNORE({dax_col(f)})' for f in meas)
+            return f"EVALUATE\n\tSUMMARIZECOLUMNS({ft}{m_ign})"
         return f"EVALUATE\n\tROW({m_args})"
+
+    if t == "slicer":
+        # The list of the column's values, filtered by the other slicers on the page.
+        cats = v["fields"]["values"]
+        keys = order_cols(cats)
+        args = ", ".join(group_cols(cats) + fnames)
+        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({args})\n"
+                f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, {', '.join(k + ', 1' for k in keys)})\n"
+                f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{', '.join(keys)}")
 
     if t in ("clusteredColumnChart", "clusteredBarChart", "lineChart"):
         # No sort is set on the visuals, so Desktop orders by the axis. A single numeric or date
@@ -166,7 +211,7 @@ def dax_for(v):
             var, body = "__DS0BodyLimited", f"SAMPLE(3502, __DS0Core, {', '.join(k + ', 1' for k in keys)})"
         else:
             var, body = "__DS0PrimaryWindowed", f"TOPN(1001, __DS0Core, {', '.join(k + ', 1' for k in keys)})"
-        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({g}, {m_args})\n"
+        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({g}, {ft}{m_args})\n"
                 f"\tVAR {var} =\n\t\t{body}\n"
                 f"EVALUATE\n\t{var}\nORDER BY\n\t{order}")
 
@@ -175,7 +220,7 @@ def dax_for(v):
         g = rollup(cols, "IsGrandTotalRowTotal")
         order = ", ".join(["[IsGrandTotalRowTotal] DESC"] + order_cols(cols))
         top = f"TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, {', '.join(c + ', 1' for c in order_cols(cols))})"
-        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({g}, {m_args})\n"
+        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({g}, {ft}{m_args})\n"
                 f"\tVAR __DS0PrimaryWindowed =\n\t\t{top}\n"
                 f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{order}")
 
@@ -191,7 +236,7 @@ def dax_for(v):
             # Rows only: one window of 502, like a table.
             top_keys = ", ".join(f"{k}, {0 if d else 1}" for k, d in row_keys)
             order = ", ".join(k + (" DESC" if d else "") for k, d in row_keys)
-            return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({row_dax}, {m_args})\n"
+            return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({row_dax}, {ft}{m_args})\n"
                     f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, {top_keys})\n"
                     f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{order}")
         # Rows and columns: a window of 102 row groups and 102 column groups, joined by a column
@@ -204,7 +249,7 @@ def dax_for(v):
         col_summ = ", ".join(group_cols(cols) + [f"[{f}]" for f in col_flags])
         top_rows = ", ".join(f"{k}, {0 if d else 1}" for k, d in row_keys)
         return (
-            f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({row_dax}, {col_dax}, {m_args})\n"
+            f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({row_dax}, {col_dax}, {ft}{m_args})\n"
             f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(102, SUMMARIZE(__DS0Core, {row_summ}), {top_rows})\n"
             f"\tVAR __DS0SecondaryBase =\n\t\tSUMMARIZE(__DS0Core, {col_summ})\n"
             f"\tVAR __DS0Secondary =\n\t\tTOPN(102, __DS0SecondaryBase, {', '.join(k + ', 1' for k in col_keys)})\n"
@@ -226,6 +271,7 @@ ROLES = {
     "lineChart": {"category": "Category", "values": "Y"},
     "tableEx": {"values": "Values"},
     "pivotTable": {"rows": "Rows", "columns": "Columns", "values": "Values"},
+    "slicer": {"values": "Values"},
 }
 
 
@@ -248,6 +294,18 @@ def visual_json(variant, page, v, pos):
         fields = v["fields"].get(key, [])
         if fields:
             state[role] = {"projections": [projection(f) for f in fields]}
+    objects = {}
+    if v["type"] == "slicer" and v.get("selected"):
+        # The selection is stored on the slicer; Desktop applies it to the page when it opens.
+        f = v["fields"]["values"][0]
+        src = f["table"][:1].lower()
+        objects["general"] = [{"properties": {"filter": {"filter": {
+            "Version": 2,
+            "From": [{"Name": src, "Entity": f["table"], "Type": 0}],
+            "Where": [{"Condition": {"In": {
+                "Expressions": [{"Column": {"Expression": {"SourceRef": {"Source": src}}, "Property": f["name"]}}],
+                "Values": [[{"Literal": {"Value": pbir_literal(x)}}] for x in v["selected"]]}}}],
+        }}}}]
     title = {"title": [{"properties": {
         "show": {"expr": {"Literal": {"Value": "true"}}},
         "text": {"expr": {"Literal": {"Value": "'" + v["title"].replace("'", "''") + "'"}}}}}]}
@@ -256,8 +314,19 @@ def visual_json(variant, page, v, pos):
         "name": stable_id(variant, page, v["id"]),
         "position": {"x": pos[0], "y": pos[1], "z": pos[4], "height": pos[3], "width": pos[2]},
         "visual": {"visualType": v["type"], "query": {"queryState": state},
+                   **({"objects": objects} if objects else {}),
                    "visualContainerObjects": title, "drillFilterOtherVisuals": True},
     }
+
+
+def pbir_literal(x):
+    if isinstance(x, bool):
+        return "true" if x else "false"
+    if isinstance(x, int):
+        return f"{x}L"
+    if isinstance(x, float):
+        return f"{x}D"
+    return "'" + str(x).replace("'", "''") + "'"
 
 
 def grid(n, width, height, gap=8):
@@ -340,6 +409,27 @@ def page_visuals(p, visuals):
     return [by_id[i] for i in p["visuals"]]
 
 
+def page_filters(spec, visuals):
+    """Slicers filter every other visual on their page (Desktop's default interactions).
+
+    The DAX is stored per visual, so a visual on a page with slicers may not be on any other page.
+    """
+    out, pages_of = {}, {}
+    for p in spec["pages"]:
+        for v in page_visuals(p, visuals):
+            pages_of.setdefault(v["id"], []).append(p["name"])
+    for p in spec["pages"]:
+        chosen = page_visuals(p, visuals)
+        slicers = [v for v in chosen if v["type"] == "slicer" and v.get("selected")]
+        if not slicers:
+            continue
+        for v in chosen:
+            if len(pages_of[v["id"]]) > 1:
+                sys.exit(f"{v['id']} is on a page with slicers ({p['name']}) and on {pages_of[v['id']]}")
+            out[v["id"]] = [(s["fields"]["values"][0], s["selected"]) for s in slicers if s is not v]
+    return out
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -361,10 +451,11 @@ def main():
 
     report = build_report(variant, spec, visuals)
 
+    filters = page_filters(spec, visuals)
     queries = {"variant": variant, "spec_version": spec["version"], "visuals": {}, "pages": {}}
     for v in visuals:
         queries["visuals"][v["id"]] = {"type": v["type"], "title": v["title"],
-                                       "visual_name": None, "dax": dax_for(v)}
+                                       "visual_name": None, "dax": dax_for(v, filters.get(v["id"], ()))}
     for p in spec["pages"]:
         ids = [v["id"] for v in page_visuals(p, visuals)]
         queries["pages"][p["name"]] = {

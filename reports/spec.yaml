@@ -15,6 +15,10 @@
 #   lineChart            category: columns, values: measures
 #   tableEx              values: columns and measures (with a total row)
 #   pivotTable           rows: columns, columns: columns, values: measures (with totals)
+#   slicer               values: one column; selected: the values selected when the page opens
+#
+# Slicers filter every other visual on their page, as Desktop does by default. A visual on a page
+# with slicers may not be on another page, because its DAX includes the page's filters.
 
 version: 1
 
@@ -35,6 +39,9 @@ pages:
   - name: p20
     title: 20 visuals
     visuals: 20
+  - name: pf
+    title: Filtered
+    visuals: [s01, s02, f01, f02, f03, f04, f05, f06]
 
 visuals:
   - id: v01
@@ -131,6 +138,48 @@ visuals:
     rows: ["Product[Category]"]
     columns: ["Customer[Continent]"]
     values: ["Sales[# Orders]"]
+
+  # Page pf: two slicers and the visuals they filter. On 1M data, Computers has 545,359 of the
+  # 2,349,091 Sales rows and Germany 266,485, with 5,000 cities. Used by v24-bidirectional and
+  # v25-many-to-many, where the filters have to cross Sales to reach the other dimensions.
+  - id: s01
+    type: slicer
+    title: Category
+    values: ["Product[Category]"]
+    selected: ["Computers"]
+  - id: s02
+    type: slicer
+    title: Country
+    values: ["Customer[Country]"]
+    selected: ["Germany"]
+  - id: f01
+    type: card
+    title: Sales amount
+    values: ["Sales[Sales Amount]"]
+  - id: f02
+    type: clusteredColumnChart
+    title: Sales by year
+    category: ["Date[Year]"]
+    values: ["Sales[Sales Amount]"]
+  - id: f03
+    type: clusteredBarChart
+    title: Sales by brand
+    category: ["Product[Brand]"]
+    values: ["Sales[Sales Amount]"]
+  - id: f04
+    type: tableEx
+    title: Cities
+    values: ["Customer[City]", "Sales[Sales Amount]", "Sales[# Orders]"]
+  - id: f05
+    type: tableEx
+    title: Stores
+    values: ["Store[Name]", "Sales[Sales Amount]"]
+  - id: f06
+    type: pivotTable
+    title: Subcategories by year
+    rows: ["Product[Subcategory]"]
+    columns: ["Date[Year]"]
+    values: ["Sales[Sales Amount]", "Sales[Margin %]"]
 
 # Per-variant additions. A variant gets the pages above plus its own; its visuals join the pool.
 # A page lists visual ids instead of a count when it is not "the first N of the pool".
