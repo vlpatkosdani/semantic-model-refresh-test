@@ -1,0 +1,11 @@
+// Captured in Desktop with "TV and Video" selected in the Category slicer; the value is replaced by "Computers", the spec selection.
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Computers"}, 'Product'[Category])
+
+	VAR __DS0FilterTable2 = 
+		TREATAS({"Germany"}, 'Customer'[Country])
+
+EVALUATE
+	SUMMARIZECOLUMNS(__DS0FilterTable, __DS0FilterTable2, "Sales_Amount", IGNORE('Sales'[Sales Amount]))

@@ -105,12 +105,12 @@
     "s01": {
       "type": "slicer",
       "title": "Category",
-      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Product'[Category], 'Product'[Category Code], __DS0FilterTable)\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(SUMMARIZE(VALUES('Product'), 'Product'[Category], 'Product'[Category Code]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
     },
     "s02": {
       "type": "slicer",
       "title": "Country",
-      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Customer'[Country], __DS0FilterTable)\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Country]"
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(VALUES('Customer'[Country]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Country]"
     },
     "f01": {
       "type": "card",
@@ -145,12 +145,12 @@
     "t01": {
       "type": "slicer",
       "title": "Category",
-      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Product'[Category], 'Product'[Category Code], __DS0FilterTable)\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(SUMMARIZE(VALUES('Product'), 'Product'[Category], 'Product'[Category Code]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
     },
     "t02": {
       "type": "slicer",
       "title": "Country",
-      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Customer'[Country], __DS0FilterTable)\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Country]"
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(VALUES('Customer'[Country]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Country]"
     },
     "o01": {
       "type": "card",

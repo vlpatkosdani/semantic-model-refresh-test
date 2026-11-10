@@ -192,11 +192,18 @@ def dax_body(v, filters):
         return f"EVALUATE\n\tROW({m_args})"
 
     if t == "slicer":
-        # The list of the column's values, filtered by the other slicers on the page.
+        # The list of the column's values (with its sort-by column), filtered by the other
+        # slicers on the page through KEEPFILTERS, as Desktop writes it.
         cats = v["fields"]["values"]
         keys = order_cols(cats)
-        args = ", ".join(group_cols(cats) + fnames)
-        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({args})\n"
+        cols = group_cols(cats)
+        if len(cols) == 1:
+            core = f"VALUES({cols[0]})"
+        else:
+            core = f"SUMMARIZE(VALUES({dax_table(cats[0]['table'])}), {', '.join(cols)})"
+        if fnames:
+            core = f"CALCULATETABLE({core}, {', '.join(f'KEEPFILTERS({n})' for n in fnames)})"
+        return (f"DEFINE\n\tVAR __DS0Core =\n\t\t{core}\n"
                 f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, {', '.join(k + ', 1' for k in keys)})\n"
                 f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{', '.join(keys)}")
 

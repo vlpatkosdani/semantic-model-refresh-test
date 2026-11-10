@@ -1,0 +1,72 @@
+// Captured in Desktop with "TV and Video" selected in the Category slicer; the value is replaced by "Computers", the spec selection.
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Computers"}, 'Product'[Category])
+
+	VAR __DS0FilterTable2 = 
+		TREATAS({"Germany"}, 'Customer'[Country])
+
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			ROLLUPADDISSUBTOTAL(
+				ROLLUPGROUP('Product'[Subcategory], 'Product'[Subcategory Code]), "IsGrandTotalRowTotal"
+			),
+			ROLLUPADDISSUBTOTAL('Date'[Year], "IsGrandTotalColumnTotal"),
+			__DS0FilterTable,
+			__DS0FilterTable2,
+			"Sales_Amount", 'Sales'[Sales Amount],
+			"Margin__", 'Sales'[Margin %]
+		)
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(
+			102,
+			SUMMARIZE(
+				__DS0Core,
+				'Product'[Subcategory],
+				'Product'[Subcategory Code],
+				[IsGrandTotalRowTotal]
+			),
+			[IsGrandTotalRowTotal],
+			0,
+			'Product'[Subcategory Code],
+			1,
+			'Product'[Subcategory],
+			1
+		)
+
+	VAR __DS0SecondaryBase = 
+		SUMMARIZE(__DS0Core, 'Date'[Year], [IsGrandTotalColumnTotal])
+
+	VAR __DS0Secondary = 
+		TOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Date'[Year], 1)
+
+	VAR __DS0BodyLimited = 
+		NATURALLEFTOUTERJOIN(
+			__DS0PrimaryWindowed,
+			SUBSTITUTEWITHINDEX(
+				__DS0Core,
+				"ColumnIndex",
+				__DS0Secondary,
+				[IsGrandTotalColumnTotal],
+				ASC,
+				'Date'[Year],
+				ASC
+			)
+		)
+
+EVALUATE
+	__DS0Secondary
+
+ORDER BY
+	[IsGrandTotalColumnTotal], 'Date'[Year]
+
+EVALUATE
+	__DS0BodyLimited
+
+ORDER BY
+	[IsGrandTotalRowTotal] DESC,
+	'Product'[Subcategory Code],
+	'Product'[Subcategory],
+	[ColumnIndex]

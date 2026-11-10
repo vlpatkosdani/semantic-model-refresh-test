@@ -1,0 +1,26 @@
+// Captured in Desktop with "TV and Video" selected in the Category slicer; the value is replaced by "Computers", the spec selection.
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Computers"}, 'Product'[Category])
+
+	VAR __DS0FilterTable2 = 
+		TREATAS({"Germany"}, 'Customer'[Country])
+
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			ROLLUPADDISSUBTOTAL('Customer'[City], "IsGrandTotalRowTotal"),
+			__DS0FilterTable,
+			__DS0FilterTable2,
+			"Sales_Amount", 'Sales'[Sales Amount],
+			"v__Orders", 'Sales'[# Orders]
+		)
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[City], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Customer'[City]
