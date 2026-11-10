@@ -573,7 +573,8 @@ def model_size(cap, dataset_id, logs, ref):
     if len(steps):
         backup = steps[steps["OperationDetailName"] == "Backup"]
         if len(backup):
-            return round(float(backup["Rows"].max()) / 1048576, 1), "Backup step in SemanticModelLogs"
+            where = "XMLA trace" if cap in TRACED else "SemanticModelLogs"
+            return round(float(backup["Rows"].max()) / 1048576, 1), f"Backup step in {where}"
     if ref["result"] == "refreshed":
         try:
             return round(labs.get_semantic_model_size(dataset=dataset_id, workspace=WORKSPACES[cap]) / 1048576, 1), \

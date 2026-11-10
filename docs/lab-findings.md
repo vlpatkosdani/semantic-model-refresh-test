@@ -97,6 +97,8 @@ This gives a practical method: refresh once on a capacity with monitoring, read 
 
 The full kitchen sink model (v99) refreshed on Pro, giving a .pbix of 458 MB. On F2 it failed at 3,319 MB and on F64 it failed at the 25.6 GB limit. This matches the customer case: a model that works on Pro and fails on a Fabric capacity. Only one Pro run was made, and the lab does not establish what limits Pro applies.
 
+On a Premium Per User workspace (100 GB per model) v99 refreshed, and an XMLA trace of the refresh measured its full peak: 26,115 MB, of which 25,958 MB is Power Query, in 20 minutes, with a 622 MB model (harness run `20261110T162110Z-v99-0db3`, 2026-11-10). That is 2 percent over F64's 25.6 GB limit, which is where F64 cancelled it, and 8.5 times F2's limit. Premium Per User runs on shared hardware, so this is recorded as its own capacity, PPU, and not as an F64 number.
+
 ## Diagnostic path, for the narrative
 
 1. v99, a kitchen sink of antipatterns, fails on F2 and F64 and refreshes on Pro.
@@ -139,7 +141,7 @@ For v00 on 1M the service size is 73 MB, and a DAX query in the service over `IN
 | v22-dax-calc-columns | baseline plus 8 calculated columns | refreshed | 686 | 430 | refreshed twice | 101 MB |  |  |
 | v23-dax-calc-tables | baseline plus 4 calculated tables, 1M | refreshed | 1,405 | 399 | refreshed twice | 184 MB |  |  |
 | v23-dax-calc-tables | same, 10M | refreshed | 13,062 | 1,202 | not run | 1,833 MB |  |  |
-| v99-kitchen-sink | everything | failed at 25.6 GB | | | failed at 3,319 |  | 458 MB (.pbix of the Pro run) |  |
+| v99-kitchen-sink | everything | failed at 25.6 GB (PPU: refreshed, peak 26,115) | | 25,958 on PPU | failed at 3,319 | 622 MB on PPU | 458 MB (.pbix of the Pro run) |  |
 | v99a | v99 without big calculated tables and flat table | refreshed | 16,054 | 15,932 | failed at 3,099 | 185 MB |  |  |
 | v99d | v99a plus an unused heavy query | refreshed | 16,010 | 15,925 | not run | 185 MB |  |  |
 | v99e | v99d plus the flat table loaded | refreshed | 22,889 | 22,766 | not run | 323 MB |  |  |

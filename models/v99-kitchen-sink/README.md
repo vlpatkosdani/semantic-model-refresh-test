@@ -86,8 +86,9 @@ The `Customer Lifetime Sales` column uses `ALLEXCEPT ( Sales, Sales[CustomerKey]
 | Pro (shared) | refreshed | downloaded .pbix 458,321 KB |
 | F2 | failed | cancelled at 3,319 MB, limit 3,065 MB |
 | F64 | failed | cancelled at 25,599 MB, limit 25,593 MB |
+| PPU (Premium Per User, 100 GB per model) | refreshed | peak 26,115 MB, Power Query 25,958 MB, 20 min, 40,515,912 rows, model 622 MB (XMLA trace, harness run `20261110T162110Z-v99-0db3`, 2026-11-10, 1M data) |
 
-The same model refreshes on Pro and fails on F64. Pro does not behave like a small Fabric capacity: the per-model memory governance that cancels the refresh on F SKUs did not stop it on shared capacity.
+The full peak, measured on Premium Per User, is 26,115 MB: just above F64's 25.6 GB limit, and 99 percent of it is Power Query. The same model refreshes on Pro and fails on F64. Pro does not behave like a small Fabric capacity: the per-model memory governance that cancels the refresh on F SKUs did not stop it on shared capacity.
 
 ## Measured so far
 
