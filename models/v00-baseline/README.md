@@ -42,6 +42,14 @@ None. This is the control. It sets the reference numbers for model size, peak re
 | F2 | 1M | refreshed | | | 2 min | |
 | F64 | 1M | refreshed (2026-11-04) | 785 | 677 | 0.7 min | 73 MB |
 | F64 | 1M | refreshed (2026-11-07, harness) | 551 | 312 | 0.7 min | 73 MB |
-| F64 | 10M | refreshed | 2,040 | 1,832 | 6 min | 778 MB |
+| F2 | 1M | refreshed (2026-11-10, harness) | | | 1.1 min | 93 MB (DAX) |
+| F64 | 1M | refreshed (2026-11-10, harness) | 623 | 599 | 0.6 min | 73 MB |
+| F64 | 10M | refreshed (2026-11-06) | 2,040 | 1,832 | 6 min | 778 MB |
+| F2 | 10M | refreshed (2026-11-10, harness) | | | 26 min | 700 MB (DAX) |
+| F64 | 10M | refreshed (2026-11-10, harness) | 2,116 | 1,584 | 6 min | 778 MB |
 
-Model size is the backup size in the refresh log, in MB of 1,048,576 bytes. On 1M the model is 73 MB, a bit above the 40 to 60 MB expected. On 10M the peak stays below the 3 GB limit of F2, so a clean star schema of 23.7M sales rows is expected to fit on F2.
+Model size is the backup size in the refresh log, in MB of 1,048,576 bytes. On 1M the model is 73 MB, a bit above the 40 to 60 MB expected. On 10M the peak stays below the 3 GB limit of F2 (2,040 and 2,116 MB in two runs), and the harness run on 2026-11-10 confirmed it: the clean star schema with 23.7M sales rows refreshed on F2. It took 26 minutes there, against 6 minutes on F64.
+
+Sizes marked (DAX) are from a DAX query in the service over `INFO.STORAGETABLECOLUMNSEGMENTS` and the column dictionaries, a different measure from the backup size. On 1M it is above the backup size (93 vs 73 MB), on 10M below it (700 vs 778 MB).
+
+The three 1M runs on F64 peaked at 785, 551 and 623 MB with the same rows and parallelism. The spread comes almost entirely from Power Query (312 to 677 MB).

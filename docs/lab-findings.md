@@ -131,7 +131,7 @@ For v00 on 1M the service size is 73 MB, and a DAX query in the service over `IN
 | Model | What it is | F64 result | F64 peak MB | Power Query MB | F2 result | Service size | Desktop file size | DAX Studio size |
 |---|---|---|---|---|---|---|---|---|
 | v00-baseline | clean star schema, 1M | refreshed | 785 | 677 | refreshed | 73 MB |  |  |
-| v00-baseline | same, 10M | refreshed | 2,040 | 1,832 | not run | 778 MB |  |  |
+| v00-baseline | same, 10M | refreshed | 2,040 | 1,832 | refreshed, 26 min | 778 MB |  |  |
 | v18-pq-10m-summary | baseline plus a 590 row summary grouped from the 10M file | refreshed | 1,562 | 1,372 | refreshed | 73 MB |  |  |
 | v19-pq-heavy-10m | baseline plus five Power Query analyses on 10M | failed, Power Query limit | 14,366 to 24,464 at failure | | failed at 3,242 | |  |  |
 | v20-pq-sort | baseline plus two sorts of Sales | refreshed | 5,229 | 4,965 | failed | 72 MB |  |  |

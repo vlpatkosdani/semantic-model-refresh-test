@@ -9,3 +9,6 @@ data/
 # Refresh results are measurements, not downloaded data
 !results/*.csv
 !results/**/*.csv
+
+# Python bytecode
+__pycache__/
