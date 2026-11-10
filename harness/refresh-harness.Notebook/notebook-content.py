@@ -591,16 +591,18 @@ class TokenBucket:
         self.rate, self.capacity, self.tokens = per_minute / 60.0, burst, float(burst)
         self.last, self.lock = time.time(), threading.Lock()
 
-    def take(self):
+    def take(self, n=1):
+        """Wait until n tokens are there and take them together. A page takes all its tokens before it
+        starts, so the queries of one render are never held back and the waiting is not measured."""
         while True:
             with self.lock:
                 now = time.time()
                 self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)
                 self.last = now
-                if self.tokens >= 1:
-                    self.tokens -= 1
+                if self.tokens >= n:
+                    self.tokens -= n
                     return
-                wait = (1 - self.tokens) / self.rate
+                wait = (n - self.tokens) / self.rate
             time.sleep(wait)
 
 
@@ -623,7 +625,8 @@ def tagged(dax, tag):
 def exec_query(ws, dataset_id, dax, tag):
     q, retries = tagged(dax, tag), 0
     while True:
-        BUCKET.take()
+        if retries:
+            BUCKET.take()   # a retry after throttling needs a token of its own
         t0 = time.time()
         try:
             r = thread_pbi().post(f"v1.0/myorg/groups/{ws}/datasets/{dataset_id}/executeQueries",
@@ -654,6 +657,7 @@ def exec_query(ws, dataset_id, dax, tag):
 def render_page(ws, dataset_id, qdef, page, mode, conc, rep):
     vids = qdef["pages"][page]["visuals"]
     tag = lambda v: f"run={run_id};page={page};visual={v};mode={mode};conc={conc};rep={rep}"
+    BUCKET.take(len(vids))
     t0 = time.time()
     if conc == "seq":
         res = [exec_query(ws, dataset_id, qdef["visuals"][v]["dax"], tag(v)) for v in vids]
