@@ -55,3 +55,18 @@ v99f added three of these tables to v99e and the F64 peak did not change (22,889
 On F64 the peak is 1,405 MB, of which 399 MB is Power Query. The part outside Power Query grows from about 110 MB in the baseline to about 1,000 MB. Unlike the calculated columns, the calculated tables clearly raise the peak. The model grows from 73 MB to 184 MB (backup size in the refresh log, MB of 1,048,576 bytes). `Sales Copy` takes 8 seconds, `Product Date Grid` 5.5 seconds, `Sales Summary` 4.6 seconds.
 
 On 10M the peak is 13,062 MB, of which 1,202 MB is Power Query. The part outside Power Query is about 11,900 MB, against about 210 MB for the baseline on 10M. The calculated tables scale with the data, about 12 times from 1M to 10M. The model is 1,833 MB (baseline on 10M: 778 MB). This model would need at least F64; it would fail on F2 to F32.
+
+### Harness runs, F64, 1M, 2026-11-10
+
+Refresh (run `20261110T131904Z-v23-8705`): peak 1,406 MB, Power Query 721 MB, 1 min, model 184 MB. The peak repeats the first measurement (1,405 MB).
+
+Query workload (run `20261110T132552Z-v23-ac2c`, all 792 queries succeeded), compared with v00-baseline (run `20261110T103141Z-v00-5b3b`). Medians over 5 repeats, cold cache, all visuals at once:
+
+| Page | Slowest visual v00 | Slowest visual v23 | CPU v00 | CPU v23 | Peak per query v00 | Peak per query v23 |
+|---|---|---|---|---|---|---|
+| p01 | 21 ms | 16 ms | 31 ms | 31 ms | 4 MB | 4 MB |
+| p05 | 141 ms | 125 ms | 328 ms | 327 ms | 14 MB | 14 MB |
+| p10 | 141 ms | 141 ms | 360 ms | 422 ms | 14 MB | 14 MB |
+| p20 | 672 ms | 672 ms | 2,033 ms | 2,001 ms | 58 MB | 58 MB |
+
+The calculated tables cost memory at refresh and in the model, but nothing measurable at query time for visuals that do not use them: the baseline's queries ran as fast as on v00.

@@ -47,3 +47,19 @@ In the v99 runs, Power Query set peaks of 13 to 23 GB and the calculated columns
 | F2 | 1M | second, right after the first | refreshed | | | |
 
 On F64 the peak is 686 MB, of which 430 MB is Power Query. The baseline peaks at 785 MB with 677 MB in Power Query. The part outside Power Query grows from about 110 MB to about 260 MB. Each calculated column takes 0.6 to 1.2 seconds to compute, `Sales Line Label` 3.5 seconds. The model grows from 73 MB to 101 MB (backup size in the refresh log, MB of 1,048,576 bytes).
+
+### Harness runs, F64, 1M, 2026-11-10
+
+Refresh (run `20261110T125746Z-v22-8023`): peak 621 MB, Power Query 270 MB, 1 min, model 101 MB. The baseline's four harness and manual runs on F64 1M peaked at 551 to 785 MB, so the calculated columns do not raise the peak measurably on 1M.
+
+Query workload (run `20261110T130235Z-v22-817d`, all 792 queries succeeded), compared with v00-baseline (run `20261110T103141Z-v00-5b3b`). Medians over 5 repeats, cold cache:
+
+| Page | Visuals | Slowest visual v00 | Slowest visual v22 | CPU v00 | CPU v22 | Peak per query v00 | Peak per query v22 |
+|---|---|---|---|---|---|---|---|
+| p01 | all at once | 21 ms | 16 ms | 31 ms | 16 ms | 4 MB | 4 MB |
+| p05 | all at once | 141 ms | 141 ms | 328 ms | 328 ms | 14 MB | 14 MB |
+| p10 | all at once | 141 ms | 156 ms | 360 ms | 407 ms | 14 MB | 14 MB |
+| p20 | all at once | 672 ms | 1,047 ms | 2,033 ms | 2,625 ms | 58 MB | 58 MB |
+| p20 | one by one | 641 ms | 782 ms | 1,906 ms | 2,063 ms | 58 MB | 58 MB |
+
+The slowest visual on p20 is v20 (orders by category and continent) on both models. It took 1,047 ms on v22 against 672 ms on v00 when all 20 visuals ran at once, and 782 ms against 641 ms one by one. The other visuals that group over Sales (v05, v14, v18) were also 50 to 100 ms slower when run at once. No visual uses the calculated columns. For comparison, v27, an unchanged copy of the baseline, measured 766 ms for v20 on the same page. This is one run per model, so a repeat run of v00 and v22 is needed before calling the difference an effect of the wider Sales table.
