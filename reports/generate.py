@@ -192,11 +192,18 @@ def dax_body(v, filters):
         return f"EVALUATE\n\tROW({m_args})"
 
     if t == "slicer":
-        # The list of the column's values, filtered by the other slicers on the page.
+        # The list of the column's values (with its sort-by column), filtered by the other
+        # slicers on the page through KEEPFILTERS, as Desktop writes it.
         cats = v["fields"]["values"]
         keys = order_cols(cats)
-        args = ", ".join(group_cols(cats) + fnames)
-        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({args})\n"
+        cols = group_cols(cats)
+        if len(cols) == 1:
+            core = f"VALUES({cols[0]})"
+        else:
+            core = f"SUMMARIZE(VALUES({dax_table(cats[0]['table'])}), {', '.join(cols)})"
+        if fnames:
+            core = f"CALCULATETABLE({core}, {', '.join(f'KEEPFILTERS({n})' for n in fnames)})"
+        return (f"DEFINE\n\tVAR __DS0Core =\n\t\t{core}\n"
                 f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, {', '.join(k + ', 1' for k in keys)})\n"
                 f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{', '.join(keys)}")
 
@@ -409,7 +416,7 @@ def page_visuals(p, visuals):
     return [by_id[i] for i in p["visuals"]]
 
 
-def page_filters(spec, visuals):
+def page_filters(variant, spec, visuals):
     """Slicers filter every other visual on their page (Desktop's default interactions).
 
     The DAX is stored per visual, so a visual on a page with slicers may not be on any other page.
@@ -420,7 +427,9 @@ def page_filters(spec, visuals):
             pages_of.setdefault(v["id"], []).append(p["name"])
     for p in spec["pages"]:
         chosen = page_visuals(p, visuals)
-        slicers = [v for v in chosen if v["type"] == "slicer" and v.get("selected")]
+        # Desktop passes the slicer filters in the order of the slicers' visual names.
+        slicers = sorted((v for v in chosen if v["type"] == "slicer" and v.get("selected")),
+                         key=lambda v: stable_id(variant, p["name"], v["id"]))
         if not slicers:
             continue
         for v in chosen:
@@ -451,7 +460,7 @@ def main():
 
     report = build_report(variant, spec, visuals)
 
-    filters = page_filters(spec, visuals)
+    filters = page_filters(variant, spec, visuals)
     queries = {"variant": variant, "spec_version": spec["version"], "visuals": {}, "pages": {}}
     for v in visuals:
         queries["visuals"][v["id"]] = {"type": v["type"], "title": v["title"],

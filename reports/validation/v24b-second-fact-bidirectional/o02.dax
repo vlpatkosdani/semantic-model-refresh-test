@@ -1,0 +1,24 @@
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Germany"}, 'Customer'[Country])
+
+	VAR __DS0FilterTable2 = 
+		TREATAS({"Computers"}, 'Product'[Category])
+
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			'Date'[Year],
+			__DS0FilterTable,
+			__DS0FilterTable2,
+			"Order_Count", 'Orders'[Order Count]
+		)
+
+	VAR __DS0BodyLimited = 
+		SAMPLE(3502, __DS0Core, 'Date'[Year], 1)
+
+EVALUATE
+	__DS0BodyLimited
+
+ORDER BY
+	'Date'[Year]

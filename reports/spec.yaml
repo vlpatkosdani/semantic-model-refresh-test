@@ -213,3 +213,43 @@ variants:
       - name: p27
         title: High cardinality
         visuals: [h01, h02, h03, h04, h05]
+
+  # v24a and v24b: a second fact table (Orders, one row per order) next to Sales. Page po asks
+  # for orders filtered by product category, which only reaches Orders through Sales and Customer
+  # when Sales to Customer filters both ways (v24b). On v24a the category slicer does not filter
+  # the Orders visuals, which is what single-direction relationships do.
+  v24a-second-fact: &second_fact
+    visuals:
+      - id: t01
+        type: slicer
+        title: Category
+        values: ["Product[Category]"]
+        selected: ["Computers"]
+      - id: t02
+        type: slicer
+        title: Country
+        values: ["Customer[Country]"]
+        selected: ["Germany"]
+      - id: o01
+        type: card
+        title: Orders
+        values: ["Orders[Order Count]"]
+      - id: o02
+        type: clusteredColumnChart
+        title: Orders by year
+        category: ["Date[Year]"]
+        values: ["Orders[Order Count]"]
+      - id: o03
+        type: tableEx
+        title: Stores
+        values: ["Store[Name]", "Orders[Order Count]", "Sales[Sales Amount]"]
+      - id: o04
+        type: clusteredBarChart
+        title: Orders by city
+        category: ["Customer[City]"]
+        values: ["Orders[Order Count]"]
+    pages:
+      - name: po
+        title: Orders filtered
+        visuals: [t01, t02, o01, o02, o03, o04]
+  v24b-second-fact-bidirectional: *second_fact

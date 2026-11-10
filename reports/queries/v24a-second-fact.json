@@ -1,0 +1,320 @@
+{
+  "variant": "v24a-second-fact",
+  "spec_version": 1,
+  "visuals": {
+    "v01": {
+      "type": "pivotTable",
+      "title": "Sales by brand and year",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Product'[Brand], \"IsGrandTotalRowTotal\"), ROLLUPADDISSUBTOTAL('Date'[Year], \"IsGrandTotalColumnTotal\"), \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(102, SUMMARIZE(__DS0Core, 'Product'[Brand], [IsGrandTotalRowTotal]), [IsGrandTotalRowTotal], 0, 'Product'[Brand], 1)\n\tVAR __DS0SecondaryBase =\n\t\tSUMMARIZE(__DS0Core, 'Date'[Year], [IsGrandTotalColumnTotal])\n\tVAR __DS0Secondary =\n\t\tTOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Date'[Year], 1)\n\tVAR __DS0BodyLimited =\n\t\tNATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, \"ColumnIndex\", __DS0Secondary, [IsGrandTotalColumnTotal], ASC, 'Date'[Year], ASC))\nEVALUATE\n\t__DS0Secondary\nORDER BY\n\t[IsGrandTotalColumnTotal], 'Date'[Year]\nEVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Product'[Brand], [ColumnIndex]"
+    },
+    "v02": {
+      "type": "card",
+      "title": "Sales amount",
+      "dax": "EVALUATE\n\tROW(\"Sales_Amount\", 'Sales'[Sales Amount])"
+    },
+    "v03": {
+      "type": "clusteredColumnChart",
+      "title": "Sales by year",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Date'[Year], \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0BodyLimited =\n\t\tSAMPLE(3502, __DS0Core, 'Date'[Year], 1)\nEVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t'Date'[Year]"
+    },
+    "v04": {
+      "type": "clusteredBarChart",
+      "title": "Sales by category",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Product'[Category], 'Product'[Category Code], \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
+    },
+    "v05": {
+      "type": "tableEx",
+      "title": "Customers by country",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Customer'[Country], \"IsGrandTotalRowTotal\"), \"Sales_Amount\", 'Sales'[Sales Amount], \"Margin\", 'Sales'[Margin], \"v__Orders\", 'Sales'[# Orders])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Customer'[Country]"
+    },
+    "v06": {
+      "type": "lineChart",
+      "title": "Sales by month",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Date'[Year Month], 'Date'[Year Month Number], \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Date'[Year Month Number], 1, 'Date'[Year Month], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Date'[Year Month Number], 'Date'[Year Month]"
+    },
+    "v07": {
+      "type": "card",
+      "title": "Orders",
+      "dax": "EVALUATE\n\tROW(\"v__Orders\", 'Sales'[# Orders])"
+    },
+    "v08": {
+      "type": "card",
+      "title": "Margin %",
+      "dax": "EVALUATE\n\tROW(\"Margin__\", 'Sales'[Margin %])"
+    },
+    "v09": {
+      "type": "clusteredBarChart",
+      "title": "Quantity by store country",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Store'[Country], \"Total_Quantity\", 'Sales'[Total Quantity])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Store'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Store'[Country]"
+    },
+    "v10": {
+      "type": "clusteredColumnChart",
+      "title": "Margin by continent",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Customer'[Continent], \"Margin\", 'Sales'[Margin])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Customer'[Continent], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Continent]"
+    },
+    "v11": {
+      "type": "card",
+      "title": "Total cost",
+      "dax": "EVALUATE\n\tROW(\"Total_Cost\", 'Sales'[Total Cost])"
+    },
+    "v12": {
+      "type": "lineChart",
+      "title": "Margin % by quarter",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Date'[Year Quarter], 'Date'[Year Quarter Number], \"Margin__\", 'Sales'[Margin %])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Date'[Year Quarter Number], 1, 'Date'[Year Quarter], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Date'[Year Quarter Number], 'Date'[Year Quarter]"
+    },
+    "v13": {
+      "type": "tableEx",
+      "title": "Subcategories",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL(ROLLUPGROUP('Product'[Subcategory], 'Product'[Subcategory Code]), \"IsGrandTotalRowTotal\"), \"Sales_Amount\", 'Sales'[Sales Amount], \"Total_Quantity\", 'Sales'[Total Quantity])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Product'[Subcategory Code], 1, 'Product'[Subcategory], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Product'[Subcategory Code], 'Product'[Subcategory]"
+    },
+    "v14": {
+      "type": "clusteredBarChart",
+      "title": "Orders by gender",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Customer'[Gender], \"v__Orders\", 'Sales'[# Orders])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Customer'[Gender], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Gender]"
+    },
+    "v15": {
+      "type": "pivotTable",
+      "title": "Continent and country",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Customer'[Continent], \"IsGrandTotalRowTotal\"), \"Sales_Amount\", 'Sales'[Sales Amount], \"Margin__\", 'Sales'[Margin %])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[Continent], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Customer'[Continent]"
+    },
+    "v16": {
+      "type": "clusteredColumnChart",
+      "title": "Sales by weekday",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Date'[Day of Week], 'Date'[Day of Week Number], \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Date'[Day of Week Number], 1, 'Date'[Day of Week], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Date'[Day of Week Number], 'Date'[Day of Week]"
+    },
+    "v17": {
+      "type": "card",
+      "title": "Quantity",
+      "dax": "EVALUATE\n\tROW(\"Total_Quantity\", 'Sales'[Total Quantity])"
+    },
+    "v18": {
+      "type": "tableEx",
+      "title": "Stores",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Store'[Name], \"IsGrandTotalRowTotal\"), \"Sales_Amount\", 'Sales'[Sales Amount], \"v__Orders\", 'Sales'[# Orders])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Store'[Name], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Store'[Name]"
+    },
+    "v19": {
+      "type": "clusteredBarChart",
+      "title": "Margin by manufacturer",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Product'[Manufacturer], \"Margin\", 'Sales'[Margin])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Product'[Manufacturer], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Manufacturer]"
+    },
+    "v20": {
+      "type": "pivotTable",
+      "title": "Orders by category and continent",
+      "dax": "DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL(ROLLUPGROUP('Product'[Category], 'Product'[Category Code]), \"IsGrandTotalRowTotal\"), ROLLUPADDISSUBTOTAL('Customer'[Continent], \"IsGrandTotalColumnTotal\"), \"v__Orders\", 'Sales'[# Orders])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(102, SUMMARIZE(__DS0Core, 'Product'[Category], 'Product'[Category Code], [IsGrandTotalRowTotal]), [IsGrandTotalRowTotal], 0, 'Product'[Category Code], 1, 'Product'[Category], 1)\n\tVAR __DS0SecondaryBase =\n\t\tSUMMARIZE(__DS0Core, 'Customer'[Continent], [IsGrandTotalColumnTotal])\n\tVAR __DS0Secondary =\n\t\tTOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Customer'[Continent], 1)\n\tVAR __DS0BodyLimited =\n\t\tNATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, \"ColumnIndex\", __DS0Secondary, [IsGrandTotalColumnTotal], ASC, 'Customer'[Continent], ASC))\nEVALUATE\n\t__DS0Secondary\nORDER BY\n\t[IsGrandTotalColumnTotal], 'Customer'[Continent]\nEVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Product'[Category Code], 'Product'[Category], [ColumnIndex]"
+    },
+    "s01": {
+      "type": "slicer",
+      "title": "Category",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(SUMMARIZE(VALUES('Product'), 'Product'[Category], 'Product'[Category Code]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
+    },
+    "s02": {
+      "type": "slicer",
+      "title": "Country",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(VALUES('Customer'[Country]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Country]"
+    },
+    "f01": {
+      "type": "card",
+      "title": "Sales amount",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\nEVALUATE\n\tSUMMARIZECOLUMNS(__DS0FilterTable, __DS0FilterTable2, \"Sales_Amount\", IGNORE('Sales'[Sales Amount]))"
+    },
+    "f02": {
+      "type": "clusteredColumnChart",
+      "title": "Sales by year",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Date'[Year], __DS0FilterTable, __DS0FilterTable2, \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0BodyLimited =\n\t\tSAMPLE(3502, __DS0Core, 'Date'[Year], 1)\nEVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t'Date'[Year]"
+    },
+    "f03": {
+      "type": "clusteredBarChart",
+      "title": "Sales by brand",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Product'[Brand], __DS0FilterTable, __DS0FilterTable2, \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Product'[Brand], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Brand]"
+    },
+    "f04": {
+      "type": "tableEx",
+      "title": "Cities",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Customer'[City], \"IsGrandTotalRowTotal\"), __DS0FilterTable, __DS0FilterTable2, \"Sales_Amount\", 'Sales'[Sales Amount], \"v__Orders\", 'Sales'[# Orders])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[City], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Customer'[City]"
+    },
+    "f05": {
+      "type": "tableEx",
+      "title": "Stores",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Store'[Name], \"IsGrandTotalRowTotal\"), __DS0FilterTable, __DS0FilterTable2, \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Store'[Name], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Store'[Name]"
+    },
+    "f06": {
+      "type": "pivotTable",
+      "title": "Subcategories by year",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL(ROLLUPGROUP('Product'[Subcategory], 'Product'[Subcategory Code]), \"IsGrandTotalRowTotal\"), ROLLUPADDISSUBTOTAL('Date'[Year], \"IsGrandTotalColumnTotal\"), __DS0FilterTable, __DS0FilterTable2, \"Sales_Amount\", 'Sales'[Sales Amount], \"Margin__\", 'Sales'[Margin %])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(102, SUMMARIZE(__DS0Core, 'Product'[Subcategory], 'Product'[Subcategory Code], [IsGrandTotalRowTotal]), [IsGrandTotalRowTotal], 0, 'Product'[Subcategory Code], 1, 'Product'[Subcategory], 1)\n\tVAR __DS0SecondaryBase =\n\t\tSUMMARIZE(__DS0Core, 'Date'[Year], [IsGrandTotalColumnTotal])\n\tVAR __DS0Secondary =\n\t\tTOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Date'[Year], 1)\n\tVAR __DS0BodyLimited =\n\t\tNATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, \"ColumnIndex\", __DS0Secondary, [IsGrandTotalColumnTotal], ASC, 'Date'[Year], ASC))\nEVALUATE\n\t__DS0Secondary\nORDER BY\n\t[IsGrandTotalColumnTotal], 'Date'[Year]\nEVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Product'[Subcategory Code], 'Product'[Subcategory], [ColumnIndex]"
+    },
+    "t01": {
+      "type": "slicer",
+      "title": "Category",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(SUMMARIZE(VALUES('Product'), 'Product'[Category], 'Product'[Category Code]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Product'[Category Code], 1, 'Product'[Category], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Product'[Category Code], 'Product'[Category]"
+    },
+    "t02": {
+      "type": "slicer",
+      "title": "Country",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0Core =\n\t\tCALCULATETABLE(VALUES('Customer'[Country]), KEEPFILTERS(__DS0FilterTable))\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(101, __DS0Core, 'Customer'[Country], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[Country]"
+    },
+    "o01": {
+      "type": "card",
+      "title": "Orders",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\nEVALUATE\n\tSUMMARIZECOLUMNS(__DS0FilterTable, __DS0FilterTable2, \"Order_Count\", IGNORE('Orders'[Order Count]))"
+    },
+    "o02": {
+      "type": "clusteredColumnChart",
+      "title": "Orders by year",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Date'[Year], __DS0FilterTable, __DS0FilterTable2, \"Order_Count\", 'Orders'[Order Count])\n\tVAR __DS0BodyLimited =\n\t\tSAMPLE(3502, __DS0Core, 'Date'[Year], 1)\nEVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t'Date'[Year]"
+    },
+    "o03": {
+      "type": "tableEx",
+      "title": "Stores",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Store'[Name], \"IsGrandTotalRowTotal\"), __DS0FilterTable, __DS0FilterTable2, \"Order_Count\", 'Orders'[Order Count], \"Sales_Amount\", 'Sales'[Sales Amount])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Store'[Name], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'Store'[Name]"
+    },
+    "o04": {
+      "type": "clusteredBarChart",
+      "title": "Orders by city",
+      "dax": "DEFINE\n\tVAR __DS0FilterTable =\n\t\tTREATAS({\"Computers\"}, 'Product'[Category])\n\tVAR __DS0FilterTable2 =\n\t\tTREATAS({\"Germany\"}, 'Customer'[Country])\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS('Customer'[City], __DS0FilterTable, __DS0FilterTable2, \"Order_Count\", 'Orders'[Order Count])\n\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(1001, __DS0Core, 'Customer'[City], 1)\nEVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t'Customer'[City]"
+    }
+  },
+  "pages": {
+    "p01": {
+      "title": "1 visual",
+      "visuals": [
+        "v01"
+      ],
+      "visual_names": {
+        "v01": "322bc5f50990350a8edc"
+      }
+    },
+    "p05": {
+      "title": "5 visuals",
+      "visuals": [
+        "v01",
+        "v02",
+        "v03",
+        "v04",
+        "v05"
+      ],
+      "visual_names": {
+        "v01": "2dcce79faa19634cfab3",
+        "v02": "a1dc72f6bf80c6a7f9c0",
+        "v03": "dcfacd7c83517ef8fd62",
+        "v04": "7871c262e22f3d185438",
+        "v05": "8d1fbc956f663ccf4868"
+      }
+    },
+    "p10": {
+      "title": "10 visuals",
+      "visuals": [
+        "v01",
+        "v02",
+        "v03",
+        "v04",
+        "v05",
+        "v06",
+        "v07",
+        "v08",
+        "v09",
+        "v10"
+      ],
+      "visual_names": {
+        "v01": "6d8a178be359ae06576e",
+        "v02": "15a3d251efe2b9902d9f",
+        "v03": "2a4670514b2b96f9e9a4",
+        "v04": "714c5cc2a4654f66a681",
+        "v05": "ed7928b3e447768bd301",
+        "v06": "0dbb67305722db1b945f",
+        "v07": "16f0930dbfb03aeabc57",
+        "v08": "a7f0d41c7e6a761128ee",
+        "v09": "2612c84b47926ffc529b",
+        "v10": "a994acdf0ac517543828"
+      }
+    },
+    "p20": {
+      "title": "20 visuals",
+      "visuals": [
+        "v01",
+        "v02",
+        "v03",
+        "v04",
+        "v05",
+        "v06",
+        "v07",
+        "v08",
+        "v09",
+        "v10",
+        "v11",
+        "v12",
+        "v13",
+        "v14",
+        "v15",
+        "v16",
+        "v17",
+        "v18",
+        "v19",
+        "v20"
+      ],
+      "visual_names": {
+        "v01": "c8d0a41c1457cbe3fbd9",
+        "v02": "43e460968922504e79e3",
+        "v03": "629bd121ca73da61067f",
+        "v04": "df9e78091ea1df35acb1",
+        "v05": "4f7f4f9e3ff9b9efa080",
+        "v06": "97b759a8b47bd8ff8abf",
+        "v07": "6dce5509035af838afe3",
+        "v08": "cb04d1548628d501dd53",
+        "v09": "26d2588659a2153502e3",
+        "v10": "984ad5d283dc56c4e248",
+        "v11": "a4b8831b56f222d53e24",
+        "v12": "b615ad7c105e32c6f0de",
+        "v13": "67e9cca37232aa122ffd",
+        "v14": "5ac5d2cc4bf7a4edb7dc",
+        "v15": "7961798746bc3181d29b",
+        "v16": "aad4e54cbfcc993d1bfc",
+        "v17": "dac0037d8796ca7b14ee",
+        "v18": "c43fccff66ac28a28019",
+        "v19": "ef554bb0c016da94d6ab",
+        "v20": "0de428efee7e092244b3"
+      }
+    },
+    "pf": {
+      "title": "Filtered",
+      "visuals": [
+        "s01",
+        "s02",
+        "f01",
+        "f02",
+        "f03",
+        "f04",
+        "f05",
+        "f06"
+      ],
+      "visual_names": {
+        "s01": "938110fc20d62393d7e7",
+        "s02": "774cc48f08c567b37e5a",
+        "f01": "d7674dddeefe018d5780",
+        "f02": "4e043675ee56cd7ea227",
+        "f03": "0175e16cffdfb97231dd",
+        "f04": "5f919d79d2001c66c213",
+        "f05": "5c2d50cacf9c0cdd618a",
+        "f06": "29c94d4bc06fd7cf4189"
+      }
+    },
+    "po": {
+      "title": "Orders filtered",
+      "visuals": [
+        "t01",
+        "t02",
+        "o01",
+        "o02",
+        "o03",
+        "o04"
+      ],
+      "visual_names": {
+        "t01": "0e2161d959909e05461f",
+        "t02": "a3b26a5867716c57d35a",
+        "o01": "dd1e1549f0e35b3e74c2",
+        "o02": "943b84bf315da93b8180",
+        "o03": "f2c414a0b870856bb033",
+        "o04": "9e4294eb27c9c8098220"
+      }
+    }
+  }
+}
