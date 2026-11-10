@@ -37,6 +37,6 @@ Users often ask for "all orders" or "all customers" in a table. These visuals ar
 
 | Capacity | Data | Run | Result | Peak MB | Power Query MB | Duration | Model size |
 |---|---|---|---|---|---|---|---|
-| F64 | 1M | harness, 2026-11-10 | refreshed | 616 | 336 | 0.8 min | 73 MB |
+| F64 | 1M | harness, 2026-11-10 | refreshed | 616 | 336 | 0.7 min | 73 MB |
 
 The refresh matches the baseline (551 to 785 MB over four runs), as it should for an unchanged model.
