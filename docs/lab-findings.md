@@ -110,7 +110,7 @@ The full kitchen sink model (v99) refreshed on Pro, giving a .pbix of 458 MB. On
 ## Caveats
 
 - The source cannot fold. With a SQL source, sorts and Group By steps that fold run in the database and do not cost refresh memory. The findings apply to non folding sources (files, web, APIs) and to steps that break folding.
-- Most models were refreshed once or a few times. Repeated successful runs of the same model varied by less than 1 percent in peak (v99d: 16,005 to 16,056 MB over three runs). Failed runs vary more, since the peak depends on when the engine stops.
+- Most models were refreshed once or a few times, so most peaks are single measurements. Repeated runs can differ a lot. v00 on 1M peaked at 785 MB on 2026-11-04 and at 551 MB on 2026-11-07, with the same rows loaded and the same parallelism; almost all of the difference is Power Query (677 vs 312 MB). v99d, on the other hand, stayed within 1 percent over three runs (16,005 to 16,056 MB). Failed runs vary more, since the peak depends on when the engine stops. Differences of a few hundred MB between single runs are not evidence of a design effect; the large effects in this document (several times the baseline) are well beyond that spread.
 - F2 results are pass or fail only.
 - A second refresh right after the first, with the old data still in memory, passed on F2 for v22 and v23 on 1M data. Those models peak far below the limit, so this does not test how much the old copy adds.
 - The 124 MB customer model was not reproduced exactly. The lab shows the mechanism with models of 72 to 114 MB that need 3.5 to 5.3 GB.
