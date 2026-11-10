@@ -402,12 +402,12 @@ TRACE_COLUMNS = {
     "CommandEnd": ["EventClass", "EventSubclass", "CurrentTime", "StartTime", "EndTime", "Duration", "CpuTime",
                    "TextData", "Success", "Error"],
     "Error": ["EventClass", "CurrentTime", "TextData"],
-    "ExecutionMetrics": ["EventClass", "CurrentTime", "TextData"],
+    "ExecutionMetrics": ["EventClass", "TextData"],   # event 136 has no CurrentTime column (2026-11-10)
 }
 # Fallbacks if the trace API refuses a column or an event; the summary says which one was used.
 TRACE_SCHEMAS = [
     ("full", TRACE_COLUMNS),
-    ("minimal columns", {e: ["EventClass", "CurrentTime", "TextData"] for e in TRACE_COLUMNS}),
+    ("minimal columns", {e: ["EventClass", "TextData"] for e in TRACE_COLUMNS}),
     ("without ExecutionMetrics", {e: c for e, c in TRACE_COLUMNS.items() if e != "ExecutionMetrics"}),
 ]
 
@@ -476,25 +476,25 @@ def traced_refresh(cap, dataset_id):
                           f"read/write, so the workspace's XMLA endpoint must allow read/write): "
                           f"{type(e).__name__}: {str(e)[:1500]}")
     with conn:
-        try:
-            schema = conn.discover_event_schema()
-            for ev in TRACE_COLUMNS:
-                hit = schema[schema.iloc[:, 0].astype(str).str.replace(" ", "") == ev] if len(schema) else schema
-                note(f"{cap}: trace event {ev}: {'available' if len(hit) else 'not listed'}")
-        except Exception as e:
-            note(f"{cap}: could not list trace events: {str(e)[:300]}")
+        # The server checks the columns only when the trace starts, so each schema is tried up to start().
         trace, used = None, None
         for name, schema in TRACE_SCHEMAS:
+            t = None
             try:
-                trace = conn.create_trace(schema, f"lab-{run_id}")
-                used = name
+                t = conn.create_trace(schema, f"lab-{run_id}-{len(name)}")
+                t.start()
+                trace, used = t, name
                 break
             except Exception as e:
                 note(f"{cap}: trace schema '{name}' refused: {str(e)[:300]}")
+                if t is not None:
+                    try:
+                        t.drop()
+                    except Exception:
+                        pass
         if trace is None:
-            raise HarnessStop(f"{cap}: could not create a trace on {variant}")
+            raise HarnessStop(f"{cap}: could not start a trace on {variant}")
         with trace:
-            trace.start()
             note(f"{cap}: trace started ({used})")
             ref = refresh(cap, dataset_id)
             time.sleep(30)   # the ExecutionMetrics event comes a little after the refresh ends
