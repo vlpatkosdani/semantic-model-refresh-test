@@ -25,12 +25,18 @@ Each visual type has a template modelled on the queries Power BI Desktop sends:
 | Visual | Query |
 |---|---|
 | card | `ROW` with the measure |
-| column and bar chart | `SUMMARIZECOLUMNS`, top 1,001 by the first measure |
-| line chart | `SUMMARIZECOLUMNS`, top 3,502 ordered by the axis |
-| table | `SUMMARIZECOLUMNS` with `ROLLUPADDISSUBTOTAL` for the total row, top 502 |
-| matrix | `ROLLUPADDISSUBTOTAL` per row and column level for subtotals, top 502 |
+| column, bar and line chart | `SUMMARIZECOLUMNS`, ordered by the axis (sort-by column first). A numeric axis on a column or line chart is sampled with `SAMPLE(3502)`, otherwise `TOPN(1001)` |
+| table | `SUMMARIZECOLUMNS` with `ROLLUPADDISSUBTOTAL` for the total row, `TOPN(502)`. Several columns or a sort-by column are grouped with `ROLLUPGROUP` |
+| matrix, rows only | like a table |
+| matrix, rows and columns | a window of 102 row groups and 102 column groups, joined with `NATURALLEFTOUTERJOIN` and `SUBSTITUTEWITHINDEX`; two result sets (column headers, then body) |
 
-All 20 queries run on v00 (checked with the `executeQueries` API on F64, 2026-11-10).
+No sort is set on the visuals, so every visual is ordered by its axis or rows. A matrix opens collapsed, so only its top level of rows and columns is queried.
+
+Result names follow Desktop: other characters become `_`, and a name that does not start with a letter gets a `v` in front (`# Orders` is `v__Orders`).
+
+Checked on 2026-11-10: 19 of the 20 queries are identical to Performance Analyzer apart from whitespace (`python reports/validate.py v00-baseline`). v13 was not captured; it uses the same table template as v05 and v18 with a sort-by column grouped as in v20.
+
+The `executeQueries` REST API returns only the first result set, which for a matrix with columns is the column headers. The query runner therefore sends the queries over XMLA.
 
 ## Checking against Performance Analyzer
 
@@ -39,6 +45,6 @@ The templates are close to what Desktop sends, not identical. Before using the q
 1. Open `models/v00-baseline/v00-baseline-workload.pbip` in Desktop and refresh.
 2. View > Performance analyzer > Start recording, then open page `20 visuals`.
 3. Copy the query of each visual (Copy query) into `reports/validation/v00-baseline/<visual id>.dax`. The visual title says which visual it is.
-4. Tell Claude Code; it compares them with `reports/queries/v00-baseline.json` and adjusts the templates where the shape differs (extra columns, other window sizes, different subtotal handling).
+4. Run `python reports/validate.py v00-baseline`. It prints SAME or the first difference per visual. Adjust the templates in `generate.py` where the shape differs.
 
 The query runner uses the captured Desktop queries where they exist and the generated ones otherwise, and records which.

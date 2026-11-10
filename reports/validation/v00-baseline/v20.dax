@@ -1,0 +1,57 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			ROLLUPADDISSUBTOTAL(
+				ROLLUPGROUP('Product'[Category], 'Product'[Category Code]), "IsGrandTotalRowTotal"
+			),
+			ROLLUPADDISSUBTOTAL('Customer'[Continent], "IsGrandTotalColumnTotal"),
+			"v__Orders", 'Sales'[# Orders]
+		)
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(
+			102,
+			SUMMARIZE(__DS0Core, 'Product'[Category], 'Product'[Category Code], [IsGrandTotalRowTotal]),
+			[IsGrandTotalRowTotal],
+			0,
+			'Product'[Category Code],
+			1,
+			'Product'[Category],
+			1
+		)
+
+	VAR __DS0SecondaryBase = 
+		SUMMARIZE(__DS0Core, 'Customer'[Continent], [IsGrandTotalColumnTotal])
+
+	VAR __DS0Secondary = 
+		TOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Customer'[Continent], 1)
+
+	VAR __DS0BodyLimited = 
+		NATURALLEFTOUTERJOIN(
+			__DS0PrimaryWindowed,
+			SUBSTITUTEWITHINDEX(
+				__DS0Core,
+				"ColumnIndex",
+				__DS0Secondary,
+				[IsGrandTotalColumnTotal],
+				ASC,
+				'Customer'[Continent],
+				ASC
+			)
+		)
+
+EVALUATE
+	__DS0Secondary
+
+ORDER BY
+	[IsGrandTotalColumnTotal], 'Customer'[Continent]
+
+EVALUATE
+	__DS0BodyLimited
+
+ORDER BY
+	[IsGrandTotalRowTotal] DESC,
+	'Product'[Category Code],
+	'Product'[Category],
+	[ColumnIndex]

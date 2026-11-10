@@ -1,0 +1,5 @@
+// DAX Query
+EVALUATE
+	ROW(
+	"Total_Quantity", 'Sales'[Total Quantity]
+)

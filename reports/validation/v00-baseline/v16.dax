@@ -1,0 +1,17 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			'Date'[Day of Week],
+			'Date'[Day of Week Number],
+			"Sales_Amount", 'Sales'[Sales Amount]
+		)
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(1001, __DS0Core, 'Date'[Day of Week Number], 1, 'Date'[Day of Week], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	'Date'[Day of Week Number], 'Date'[Day of Week]
