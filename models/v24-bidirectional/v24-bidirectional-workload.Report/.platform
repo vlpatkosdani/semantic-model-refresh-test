@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v24-bidirectional-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "a13e54f3-dd86-5cf4-9a8f-cf612ee13950"
+  }
+}

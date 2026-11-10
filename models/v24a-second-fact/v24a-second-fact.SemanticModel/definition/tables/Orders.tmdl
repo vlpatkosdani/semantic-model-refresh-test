@@ -1,0 +1,91 @@
+table Orders
+	lineageTag: 985fbe2d-088e-4253-b2b4-784c4f09565e
+
+	measure 'Order Count' = COUNTROWS ( Orders )
+		formatString: #,0
+		lineageTag: cd206cdd-506c-4729-be39-2db54f523720
+
+	column 'Order Number'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4d62aaf9-74f5-4b84-ba06-6f2cb6f9f370
+		summarizeBy: none
+		sourceColumn: Order Number
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Order Date'
+		dataType: dateTime
+		isHidden
+		formatString: mm/dd/yyyy
+		lineageTag: b3047234-8a03-423a-bbf4-ffb8b728dfe8
+		summarizeBy: none
+		sourceColumn: Order Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Delivery Date'
+		dataType: dateTime
+		isHidden
+		formatString: mm/dd/yyyy
+		lineageTag: 77b60bc9-fe11-4a24-945e-a5c68005e089
+		summarizeBy: none
+		sourceColumn: Delivery Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 32bb4c26-d91d-46ae-bea8-c17fa7ed4052
+		summarizeBy: none
+		sourceColumn: CustomerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e008365d-9f3c-467a-a40b-8ce456833fe7
+		summarizeBy: none
+		sourceColumn: StoreKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Currency Code'
+		dataType: string
+		isHidden
+		lineageTag: 5da19242-8aa4-45d4-addf-51b4aa4ba901
+		summarizeBy: none
+		sourceColumn: Currency Code
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Orders-94d3e280-e417-4d9d-ad5b-23ddbd1891fa = m
+		mode: import
+		source =
+				let
+				    Source = fnLoadParquet("orders.parquet"),
+				    #"Renamed Columns" = Table.RenameColumns(Source, {{"OrderKey", "Order Number"}, {"DT", "Order Date"}, {"DeliveryDate", "Delivery Date"}, {"CurrencyCode", "Currency Code"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns", {{"Order Number", Int64.Type}, {"Order Date", type date}, {"Delivery Date", type date}, {"CustomerKey", Int64.Type}, {"StoreKey", Int64.Type}, {"Currency Code", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation

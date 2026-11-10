@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v24a-second-fact-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "821ea7db-7814-5ec9-affa-112bc6c82f58"
+  }
+}
