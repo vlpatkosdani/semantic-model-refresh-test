@@ -26,6 +26,12 @@ expected_commit = ""          # commit the driver pushed; empty means whatever t
 harness_run_id = ""           # set by the driver; empty means generate one
 max_refresh_minutes = "120"   # stop polling the refresh after this many minutes
 max_log_wait_minutes = "20"   # stop waiting for the monitoring event after this many minutes
+task = "refresh"              # refresh: full refresh cycle. queries: run the query workload
+queries_file = ""             # queries task: path under harness_lake Files/ with the variant's query JSON
+pages = "p01,p05,p10,p20"     # queries task: pages to render
+modes = "cold,warm"           # queries task: cold clears the cache before each repeat; warm renders once unmeasured first
+concurrency = "seq,page"      # queries task: seq sends visuals one by one; page sends all visuals of a page at once
+repeats = "5"                 # queries task: measured renders per page, mode and concurrency
 
 # METADATA ********************
 
@@ -564,14 +570,232 @@ def write_csv(path, df):
 
 # MARKDOWN ********************
 
+# ## Query workload (task = queries)
+# Sends the DAX of each visual through the executeQueries REST API, page by page, and reads back what the engine logged.
+# Every query starts with an unused variable, VAR __LabTag = "run=...;page=...;visual=...;mode=...;conc=...;rep=...".
+# Comments do not reach SemanticModelLogs, the variable does. All events of one query share an OperationId.
+
+# CELL ********************
+
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+import numpy as np
+
+
+class TokenBucket:
+    """executeQueries allows about 120 queries per minute per user. Bursts of a whole page are allowed,
+    the average rate stays under the limit."""
+
+    def __init__(self, per_minute=100, burst=20):
+        self.rate, self.capacity, self.tokens = per_minute / 60.0, burst, float(burst)
+        self.last, self.lock = time.time(), threading.Lock()
+
+    def take(self):
+        while True:
+            with self.lock:
+                now = time.time()
+                self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)
+                self.last = now
+                if self.tokens >= 1:
+                    self.tokens -= 1
+                    return
+                wait = (1 - self.tokens) / self.rate
+            time.sleep(wait)
+
+
+BUCKET = TokenBucket()
+_local = threading.local()
+
+
+def thread_pbi():
+    if not hasattr(_local, "client"):
+        _local.client = fabric.PowerBIRestClient()
+    return _local.client
+
+
+def tagged(dax, tag):
+    head = f'DEFINE\n\tVAR __LabTag = "{tag}"\n'
+    s = dax.lstrip()
+    return head + (s[len("DEFINE"):].lstrip("\n") if s.upper().startswith("DEFINE") else s)
+
+
+def exec_query(ws, dataset_id, dax, tag):
+    q, retries = tagged(dax, tag), 0
+    while True:
+        BUCKET.take()
+        t0 = time.time()
+        try:
+            r = thread_pbi().post(f"v1.0/myorg/groups/{ws}/datasets/{dataset_id}/executeQueries",
+                                  json={"queries": [{"query": q}], "serializerSettings": {"includeNulls": True}})
+            status, text = r.status_code, None
+        except Exception as e:          # the client may raise on HTTP errors
+            r, status, text = None, getattr(getattr(e, "response", None), "status_code", -1), str(e)
+        t1 = time.time()
+        if status == 429 and retries < 6:
+            retries += 1
+            time.sleep(float((r.headers.get("Retry-After") if r is not None else None) or 10))
+            continue
+        break
+    rows, err = None, ""
+    if status == 200:
+        res = r.json().get("results", [{}])[0]
+        if "error" in res:
+            err = json.dumps(res["error"])[:2000]
+        else:
+            rows = len(res["tables"][0]["rows"])
+    else:
+        err = f"HTTP {status} {(r.text if r is not None else text)[:2000]}"
+    return {"tag": tag, "client_start_utc": dt.datetime.fromtimestamp(t0, dt.timezone.utc).isoformat(),
+            "client_ms": round((t1 - t0) * 1000), "http_status": status, "rows_first_result": rows,
+            "retries": retries, "client_error": err}
+
+
+def render_page(ws, dataset_id, qdef, page, mode, conc, rep):
+    vids = qdef["pages"][page]["visuals"]
+    tag = lambda v: f"run={run_id};page={page};visual={v};mode={mode};conc={conc};rep={rep}"
+    t0 = time.time()
+    if conc == "seq":
+        res = [exec_query(ws, dataset_id, qdef["visuals"][v]["dax"], tag(v)) for v in vids]
+    else:
+        with ThreadPoolExecutor(max_workers=len(vids)) as ex:
+            res = list(ex.map(lambda v: exec_query(ws, dataset_id, qdef["visuals"][v]["dax"], tag(v)), vids))
+    wall = round((time.time() - t0) * 1000)
+    for v, r in zip(vids, res):
+        r.update({"page": page, "visual": v, "visual_type": qdef["visuals"][v]["type"], "mode": mode,
+                  "conc": conc, "rep": rep, "page_wall_ms": wall})
+    return res
+
+
+def run_workload(cap, dataset_id):
+    ws = WORKSPACES[cap]
+    qdef = json.loads(notebookutils.fs.head(f"{LAKE}/Files/{queries_file}", 50_000_000))
+    if qdef["variant"] != variant:
+        raise HarnessStop(f"{queries_file} is for {qdef['variant']}, not {variant}")
+    page_list = [p.strip() for p in pages.split(",") if p.strip()]
+    for p in page_list:
+        if p not in qdef["pages"]:
+            raise HarnessStop(f"page {p} not in {queries_file}")
+    started, sent = utcnow(), []
+    for page in page_list:
+        for conc in [c.strip() for c in concurrency.split(",") if c.strip()]:
+            for mode in [m.strip() for m in modes.split(",") if m.strip()]:
+                if mode == "warm":
+                    sent += render_page(ws, dataset_id, qdef, page, mode, conc, 0)   # warm-up, not measured
+                for rep in range(1, int(repeats) + 1):
+                    if mode == "cold":
+                        labs.clear_cache(dataset=dataset_id, workspace=ws)
+                    sent += render_page(ws, dataset_id, qdef, page, mode, conc, rep)
+        note(f"{cap}: page {page} done, {len(sent)} queries so far")
+    return started, pd.DataFrame(sent)
+
+
+def query_logs_kql(dataset_id, start):
+    return f"""
+let Start = {kdt(start)} - 5m;
+let Q = SemanticModelLogs
+| where Timestamp > Start and ItemId == "{dataset_id}" and OperationName == "QueryEnd" and EventText contains "run={run_id};"
+| extend tag = extract(@'__LabTag\\s*=\\s*"([^"]+)"', 1, EventText)
+| project OperationId, server_end_utc = Timestamp, server_ms = DurationMs, cpu_ms = CpuTimeMs,
+          server_status = Status, status_code = StatusCode, tag;
+let M = SemanticModelLogs
+| where Timestamp > Start and ItemId == "{dataset_id}" and OperationName == "ExecutionMetrics"
+| extend j = parse_json(EventText)
+| where isnull(j.tabularConnectionTimeoutMs)
+| project OperationId, peak_mem_kb = tolong(j.approximatePeakMemConsumptionKB), result_rows = tolong(j.queryResultRows),
+          execution_delay_ms = tolong(j.executionDelayMs), vertipaq_cpu_ms = tolong(j.vertipaqJobCpuTimeMs),
+          formula_cpu_ms = tolong(j.queryProcessingCpuTimeMs);
+let SE = SemanticModelLogs
+| where Timestamp > Start and ItemId == "{dataset_id}" and OperationName startswith "VertiPaqSEQuery"
+| summarize se_queries = countif(OperationName == "VertiPaqSEQueryEnd" and OperationDetailName == "VertiPaqScan"),
+            se_cache_hits = countif(OperationName == "VertiPaqSEQueryCacheMatch"),
+            se_ms = sumif(DurationMs, OperationName == "VertiPaqSEQueryEnd" and OperationDetailName == "VertiPaqScan")
+  by OperationId;
+let E = SemanticModelLogs
+| where Timestamp > Start and ItemId == "{dataset_id}" and OperationName == "Error"
+| summarize server_error = take_any(EventText) by OperationId;
+Q
+| join kind=leftouter M on OperationId
+| join kind=leftouter SE on OperationId
+| join kind=leftouter E on OperationId
+| project-away OperationId1, OperationId2, OperationId3"""
+
+
+def read_query_logs(cap, dataset_id, start, expected):
+    deadline, interval, df = time.time() + float(max_log_wait_minutes) * 60, 20, pd.DataFrame()
+    while time.time() < deadline:
+        df = kql(cap, query_logs_kql(dataset_id, iso(start)))
+        complete = len(df) >= expected and (df["peak_mem_kb"].notna().sum() >= expected if len(df) else False)
+        if complete:
+            break
+        time.sleep(interval)
+        interval = min(interval + 20, 60)
+    note(f"{cap}: {len(df)} of {expected} queries found in SemanticModelLogs")
+    return df
+
+
+def p90(s):
+    s = pd.to_numeric(s, errors="coerce").dropna()
+    return float(np.percentile(s, 90)) if len(s) else None
+
+
+def summarise_queries(q):
+    meas = q[q["rep"] > 0]
+    per_page = meas.groupby(["page", "mode", "conc", "rep"]).agg(
+        visuals=("visual", "count"), page_wall_ms=("page_wall_ms", "first"),
+        server_sum_ms=("server_ms", "sum"), server_max_ms=("server_ms", "max"), cpu_sum_ms=("cpu_ms", "sum"),
+        peak_mem_max_kb=("peak_mem_kb", "max"), errors=("failed", "sum")).reset_index()
+    summary = per_page.groupby(["page", "mode", "conc"]).agg(
+        repeats=("rep", "count"), visuals=("visuals", "first"),
+        page_wall_median_ms=("page_wall_ms", "median"), page_wall_p90_ms=("page_wall_ms", p90),
+        server_max_median_ms=("server_max_ms", "median"), server_max_p90_ms=("server_max_ms", p90),
+        server_sum_median_ms=("server_sum_ms", "median"), cpu_sum_median_ms=("cpu_sum_ms", "median"),
+        peak_mem_max_kb=("peak_mem_max_kb", "max"), errors=("errors", "sum")).reset_index()
+    return per_page, summary
+
+
+def run_queries_task(cap, head, tag, dataset_id):
+    started, client = run_workload(cap, dataset_id)
+    if cap in MONITORED:
+        logs = read_query_logs(cap, dataset_id, started, len(client))
+        q = client.merge(logs, on="tag", how="left")
+    else:
+        q = client.copy()
+        for c in ("server_ms", "cpu_ms", "peak_mem_kb", "result_rows", "execution_delay_ms", "server_error"):
+            q[c] = None
+    q["failed"] = (q["client_error"].fillna("") != "") | (q.get("server_status", pd.Series(dtype=str)).fillna("Succeeded") != "Succeeded")
+    meta = {"harness_run_id": run_id, "notebook_run_id": notebook_run_id, "variant": variant, "data_tag": data_tag,
+            "data_tag_readback": tag, "capacity": cap, "workspace_head": head}
+    for k, v in reversed(list(meta.items())):
+        q.insert(0, k, v)
+    per_page, summary = summarise_queries(q)
+    for df in (per_page, summary):
+        for k, v in reversed(list(meta.items())):
+            df.insert(0, k, v)
+    return q, per_page, summary
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
 # ## Run
 
 # CELL ********************
 
 rows, sections, stop_reason = [], [], None
+query_frames = {"queries": [], "pages": [], "summary": []}
 try:
+    if task not in ("refresh", "queries"):
+        raise HarnessStop(f"unknown task {task}")
+    if task == "queries" and not queries_file:
+        raise HarnessStop("task queries needs queries_file")
     prepared = {}
-    for cap in target_list:                      # all checks pass before any refresh starts
+    for cap in target_list:                      # all checks pass before any refresh or query starts
         if cap not in WORKSPACES:
             raise HarnessStop(f"unknown target {cap}; known: {', '.join(WORKSPACES)}")
         head = sync_workspace(cap)
@@ -579,7 +803,28 @@ try:
         prepared[cap] = (head, dataset_id, tag, params)
 
     hist = history()
-    for cap in target_list:
+    for cap in (target_list if task == "queries" else []):
+        head, dataset_id, tag, params = prepared[cap]
+        q, per_page, summary_df = run_queries_task(cap, head, tag, dataset_id)
+        for k, df in (("queries", q), ("pages", per_page), ("summary", summary_df)):
+            query_frames[k].append(df)
+        spark.createDataFrame(q.astype(str)).write.format("delta").mode("append") \
+            .option("mergeSchema", "true").save(f"{LAKE}/Tables/query_runs")   # append only
+        failed = int(q["failed"].sum())
+        found = int(q["peak_mem_kb"].notna().sum()) if "peak_mem_kb" in q else 0
+        sections += [f"## {cap}", "",
+                     f"- {len(q)} queries sent ({int((q['rep'] == 0).sum())} warm-up), {failed} failed, "
+                     f"{found} found in SemanticModelLogs, {int(q['retries'].sum())} throttling retries",
+                     f"- Workspace at {head[:7] if head else '?'}, DataTag read back {tag}", "",
+                     "Median and p90 over the repeats, per page:", "",
+                     md_table(summary_df[["page", "mode", "conc", "repeats", "page_wall_median_ms", "page_wall_p90_ms",
+                                          "server_max_median_ms", "server_sum_median_ms", "cpu_sum_median_ms",
+                                          "peak_mem_max_kb", "errors"]]), ""]
+        if failed:
+            errs = q[q["failed"]][["page", "visual", "mode", "conc", "rep", "client_error"]].head(10)
+            sections += ["Failed queries (first 10):", "", md_table(errs), ""]
+
+    for cap in (target_list if task == "refresh" else []):
         head, dataset_id, tag, params = prepared[cap]
         ref = refresh(cap, dataset_id)
         logs = read_logs(cap, dataset_id, ref)
@@ -618,9 +863,10 @@ except HarnessStop as e:
     note(f"STOPPED: {stop_reason}")
 
 summary = [f"# Harness run {run_id}", "",
-           f"- Variant: {variant}", f"- Data tag: {data_tag}", f"- Targets: {', '.join(target_list)}",
-           f"- Expected commit: {expected_commit or '(remote head)'}", f"- Notebook run: {notebook_run_id}",
-           f"- Refresh parallelism requested: {REFRESH_PARALLELISM}", ""]
+           f"- Task: {task}", f"- Variant: {variant}", f"- Data tag: {data_tag}", f"- Targets: {', '.join(target_list)}",
+           f"- Expected commit: {expected_commit or '(remote head)'}", f"- Notebook run: {notebook_run_id}"]
+summary += ([f"- Refresh parallelism requested: {REFRESH_PARALLELISM}", ""] if task == "refresh" else
+            [f"- Pages {pages}, modes {modes}, concurrency {concurrency}, repeats {repeats}, queries from {queries_file}", ""])
 if stop_reason:
     summary += ["**Stopped before finishing:**", "", "```", stop_reason, "```", ""]
 summary += sections + ["## Log", "", "```"] + log_lines + ["```", ""]
@@ -629,6 +875,9 @@ summary_text = "\n".join(summary)
 write_text(f"{RUN_DIR}/summary.md", summary_text)
 if rows:
     write_csv(f"{RUN_DIR}/rows.csv", pd.DataFrame(rows, columns=COLUMNS))
+for k, frames in query_frames.items():
+    if frames:
+        write_csv(f"{RUN_DIR}/query-{k}.csv", pd.concat(frames, ignore_index=True))
 write_text(f"{RUN_DIR}/status.json", json.dumps({"run_id": run_id, "stopped": stop_reason, "rows": len(rows)}))
 print(summary_text)
 

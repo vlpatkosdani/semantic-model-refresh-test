@@ -109,7 +109,7 @@ def committed_data_tag(variant):
 
 
 def check_pushed():
-    if git("status", "--porcelain", "--", "models", "harness"):
+    if git("status", "--porcelain", "--", "models", "harness", "reports"):
         sys.exit("models/ or harness/ has uncommitted changes. Commit and push first.")
     git("fetch", REMOTE, BRANCH)
     head, remote = git("rev-parse", "HEAD"), git("rev-parse", f"{REMOTE}/{BRANCH}")
@@ -221,6 +221,36 @@ def download(name):
     return content
 
 
+# Result files the notebook writes, and the repo CSV each one is appended to.
+APPEND_TO = {
+    "rows.csv": RUNS_CSV,
+    "query-queries.csv": ROOT / "results" / "query-runs.csv",
+    "query-pages.csv": ROOT / "results" / "query-pages.csv",
+    "query-summary.csv": ROOT / "results" / "query-summary.csv",
+}
+
+
+def append_csv(target, text, job_id):
+    """Append rows with the job instance ID in front. Append only, never rewrite."""
+    new_rows = list(csv.DictReader(text.splitlines()))
+    if not new_rows:
+        return 0
+    fields = ["job_instance_id"] + list(new_rows[0].keys())
+    if target.exists():
+        with target.open(newline="", encoding="utf-8") as f:
+            header = next(csv.reader(f), [])
+        if header != fields:
+            sys.exit(f"{target} has different columns. Not touching it; the rows are in the run folder.")
+    write_header = not target.exists()
+    with target.open("a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        if write_header:
+            w.writeheader()
+        for r in new_rows:
+            w.writerow({"job_instance_id": job_id, **r})
+    return len(new_rows)
+
+
 def pull_results(run_id, job_id):
     lake_id = item_id(HARNESS_WS, "Lakehouse", LAKEHOUSE)
     names = onelake_files(lake_id, f"harness/runs/{run_id}")
@@ -229,36 +259,43 @@ def pull_results(run_id, job_id):
         return None
     out_dir = ROOT / "results" / "harness" / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
-    rows_text = None
     for name in names:
         content = download(name)
         base = name.rsplit("/", 1)[-1]
-        (out_dir / base).write_bytes(content)
-        if base == "rows.csv":
-            rows_text = content.decode("utf-8")
-    if rows_text:
-        new_rows = list(csv.DictReader(rows_text.splitlines()))
-        fields = ["job_instance_id"] + list(new_rows[0].keys())
-        existing = read_runs()
-        if existing and list(existing[0].keys()) != fields:
-            sys.exit(f"{RUNS_CSV} has different columns. Not touching it; rows are in {out_dir / 'rows.csv'}.")
-        write_header = not RUNS_CSV.exists()
-        with RUNS_CSV.open("a", newline="", encoding="utf-8") as f:   # append only, never rewrite
-            w = csv.DictWriter(f, fieldnames=fields)
-            if write_header:
-                w.writeheader()
-            for r in new_rows:
-                w.writerow({"job_instance_id": job_id, **r})
-        (out_dir / "rows.csv").unlink()   # the rows live in harness-runs.csv
-        print(f"Appended {len(new_rows)} row(s) to {RUNS_CSV.relative_to(ROOT)}")
+        if base in APPEND_TO:   # these rows live in the repo CSVs, not in the run folder
+            n = append_csv(APPEND_TO[base], content.decode("utf-8"), job_id)
+            print(f"Appended {n} row(s) to {APPEND_TO[base].relative_to(ROOT)}")
+        else:
+            (out_dir / base).write_bytes(content)
     summary = out_dir / "summary.md"
     return summary if summary.exists() else None
+
+
+def upload(lake_id, path, content):
+    """Write one file to harness_lake Files/ through the OneLake DFS API."""
+    url = f"{ONELAKE}/{HARNESS_WS}/{lake_id}/Files/{urllib.parse.quote(path)}"
+    h = {"x-ms-version": "2023-11-03"}
+    steps = [("PUT", url + "?resource=file", None),
+             ("PATCH", url + "?action=append&position=0", content),
+             ("PATCH", url + f"?action=flush&position={len(content)}", None)]
+    for method, u, data in steps:
+        req = urllib.request.Request(u, data=data if data is not None else b"", method=method,
+                                     headers={"Authorization": "Bearer " + token("https://storage.azure.com"), **h})
+        try:
+            urllib.request.urlopen(req).read()
+        except urllib.error.HTTPError as e:
+            sys.exit(f"upload {path}: {method} HTTP {e.code} {e.read().decode(errors='replace')[:500]}")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("variant")
     ap.add_argument("--targets", default="F64", help="comma separated, run in this order: F2,F64")
+    ap.add_argument("--task", choices=["refresh", "queries"], default="refresh")
+    ap.add_argument("--pages", default="p01,p05,p10,p20", help="queries task")
+    ap.add_argument("--modes", default="cold,warm", help="queries task")
+    ap.add_argument("--concurrency", default="seq,page", help="queries task")
+    ap.add_argument("--repeats", default="5", help="queries task")
     args = ap.parse_args()
     targets = [t.strip() for t in args.targets.split(",") if t.strip()]
     if not (ROOT / "models" / args.variant).is_dir():
@@ -267,12 +304,24 @@ def main():
     data_tag = committed_data_tag(args.variant)
     commit = check_pushed()
     print(f"{args.variant}: DataTag {data_tag} at {commit[:7]}, targets {', '.join(targets)}")
-    warn_before_10m(args.variant, data_tag, targets)
+    if args.task == "refresh":
+        warn_before_10m(args.variant, data_tag, targets)
     sync_harness_workspace(commit)
 
     run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + args.variant.split("-")[0] + "-" + uuid.uuid4().hex[:4]
-    job_id, job = run_notebook({"variant": args.variant, "data_tag": data_tag, "targets": ",".join(targets),
-                                "expected_commit": commit, "harness_run_id": run_id})
+    params = {"variant": args.variant, "data_tag": data_tag, "targets": ",".join(targets),
+              "expected_commit": commit, "harness_run_id": run_id, "task": args.task}
+    if args.task == "queries":
+        qpath = f"reports/queries/{args.variant}.json"
+        try:
+            qtext = git("show", f"HEAD:{qpath}")   # the committed queries, not the working tree
+        except subprocess.CalledProcessError:
+            sys.exit(f"{qpath} is not committed. Run reports/generate.py {args.variant} and commit.")
+        lake_id = item_id(HARNESS_WS, "Lakehouse", LAKEHOUSE)
+        upload(lake_id, f"harness/queries/{run_id}.json", qtext.encode("utf-8"))
+        params.update({"queries_file": f"harness/queries/{run_id}.json", "pages": args.pages,
+                       "modes": args.modes, "concurrency": args.concurrency, "repeats": args.repeats})
+    job_id, job = run_notebook(params)
     if job.get("status") != "Completed":
         print(f"Notebook job ended {job.get('status')}: {json.dumps(job.get('failureReason'))[:1500]}")
     summary = pull_results(run_id, job_id)
