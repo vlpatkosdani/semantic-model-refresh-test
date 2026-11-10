@@ -28,9 +28,13 @@ A sort cannot stream. Power Query has to read all 2.35M rows into memory before 
 
 ## Results
 
-| Capacity | Result | Details |
-|---|---|---|
-| F64 | refreshed | |
-| F2 | failed | consumed memory not recorded |
+| Capacity | Data | Run | Result | Peak MB | Power Query MB | Duration | Details |
+|---|---|---|---|---|---|---|---|
+| F64 | 1M | manual, 2026-11-06 | refreshed | 5,229 | 4,965 | 8.6 min | service size 72 MB |
+| F2 | 1M | manual, 2026-11-06 | failed | | | | consumed memory not recorded |
+| F2 | 1M | harness, 2026-11-10 | failed | | | 1.2 min | resource governance: consumed 3,179 MB, limit 3,067 MB, database size before command 4 MB |
+| F64 | 1M | harness, 2026-11-10 | refreshed | 5,269 | 5,043 | 1.8 min | service size 72 MB |
+
+The harness run is within 1% of the manual run on F64 (5,269 vs 5,229 MB). On the same day v00 peaked at 623 MB, so the two sorts add about 4,650 MB. The peak is above the F2 limit and just above the documented F16 limit (5,120 MB). The duration differs a lot from the manual run (1.8 vs 8.6 min), the peak does not.
 
 The two sorts alone take the baseline off F2. The loaded table is identical to the baseline, only the row order differs, so the extra memory is used by Power Query during the refresh and none of it stays in the model.
