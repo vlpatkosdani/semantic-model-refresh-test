@@ -702,9 +702,11 @@ let M = SemanticModelLogs
 | where Timestamp > Start and ItemId == "{dataset_id}" and OperationName == "ExecutionMetrics"
 | extend j = parse_json(EventText)
 | where isnull(j.tabularConnectionTimeoutMs)
-| project OperationId, peak_mem_kb = tolong(j.approximatePeakMemConsumptionKB), result_rows = tolong(j.queryResultRows),
-          execution_delay_ms = tolong(j.executionDelayMs), vertipaq_cpu_ms = tolong(j.vertipaqJobCpuTimeMs),
-          formula_cpu_ms = tolong(j.queryProcessingCpuTimeMs);
+// A query can have more than one ExecutionMetrics event (one with zeros); keep one row per query.
+| summarize peak_mem_kb = max(tolong(j.approximatePeakMemConsumptionKB)), result_rows = max(tolong(j.queryResultRows)),
+            execution_delay_ms = max(tolong(j.executionDelayMs)), vertipaq_cpu_ms = max(tolong(j.vertipaqJobCpuTimeMs)),
+            formula_cpu_ms = max(tolong(j.queryProcessingCpuTimeMs))
+  by OperationId;
 let SE = SemanticModelLogs
 | where Timestamp > Start and ItemId == "{dataset_id}" and OperationName startswith "VertiPaqSEQuery"
 | summarize se_queries = countif(OperationName == "VertiPaqSEQueryEnd" and OperationDetailName == "VertiPaqScan"),
@@ -763,7 +765,13 @@ def run_queries_task(cap, head, tag, dataset_id):
         q = client.copy()
         for c in ("server_ms", "cpu_ms", "peak_mem_kb", "result_rows", "execution_delay_ms", "server_error"):
             q[c] = None
-    q["failed"] = (q["client_error"].fillna("") != "") | (q.get("server_status", pd.Series(dtype=str)).fillna("Succeeded") != "Succeeded")
+    # The REST API returns only one result set. A matrix with columns has two (headers and body): the engine
+    # runs the whole query and the API then reports DaxResultsetCountNotSupported. That is not a failed query.
+    server_ok = q.get("server_status", pd.Series(index=q.index, dtype=object)).fillna("") == "Succeeded"
+    rest_only = q["client_error"].fillna("").str.contains("DaxResultsetCountNotSupported") & server_ok
+    q["note"] = np.where(rest_only, "REST returned one of two result sets; server completed the query", "")
+    q.loc[rest_only, "client_error"] = ""
+    q["failed"] = (q["client_error"].fillna("") != "") |         (q.get("server_status", pd.Series(index=q.index, dtype=object)).fillna("Succeeded") != "Succeeded")
     meta = {"harness_run_id": run_id, "notebook_run_id": notebook_run_id, "variant": variant, "data_tag": data_tag,
             "data_tag_readback": tag, "capacity": cap, "workspace_head": head}
     for k, v in reversed(list(meta.items())):
