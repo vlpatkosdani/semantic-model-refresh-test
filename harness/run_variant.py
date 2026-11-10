@@ -66,12 +66,17 @@ def http(method, url, body=None, resource="https://api.fabric.microsoft.com", he
         h["Content-Type"] = "application/json"
     h.update(headers or {})
     req = urllib.request.Request(url, data=data, method=method, headers=h)
-    try:
-        with urllib.request.urlopen(req) as r:
-            content = r.read()
-            return r.status, {k.lower(): v for k, v in r.headers.items()}, (content if raw else (json.loads(content) if content else {}))
-    except urllib.error.HTTPError as e:
-        return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read().decode(errors="replace")
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                content = r.read()
+                return r.status, {k.lower(): v for k, v in r.headers.items()}, (content if raw else (json.loads(content) if content else {}))
+        except urllib.error.HTTPError as e:
+            return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read().decode(errors="replace")
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:   # network trouble on this side
+            print(f"  network error ({e}), retrying in {15 * (attempt + 1)} s")
+            time.sleep(15 * (attempt + 1))
+    sys.exit(f"{method} {url}: no connection after 5 attempts")
 
 
 def fabric(method, path, body=None, lro=False):
@@ -189,7 +194,13 @@ def run_notebook(params):
     status, headers, out = fabric("POST", f"/workspaces/{HARNESS_WS}/items/{nb}/jobs/instances?jobType=RunNotebook", body)
     loc = headers.get("location")
     job_id = loc.rstrip("/").split("/")[-1]
-    print(f"Notebook job {job_id} started")
+    print(f"Notebook job {job_id} started, run {params.get('harness_run_id')}")
+    print(f"If this driver stops, pick the job up again with: --attach {job_id} --run-id {params.get('harness_run_id')}")
+    return wait_for_job(loc)
+
+
+def wait_for_job(loc):
+    job_id = loc.rstrip("/").split("/")[-1]
     start, last = time.time(), None
     while True:
         time.sleep(30)
@@ -296,7 +307,26 @@ def main():
     ap.add_argument("--modes", default="cold,warm", help="queries task")
     ap.add_argument("--concurrency", default="seq,page", help="queries task")
     ap.add_argument("--repeats", default="5", help="queries task")
+    ap.add_argument("--attach", metavar="JOB_ID", help="wait for a job that is already running and pull its results")
+    ap.add_argument("--run-id", help="with --attach: the harness run id of that job")
     args = ap.parse_args()
+    if args.attach:
+        nb = item_id(HARNESS_WS, "Notebook", NOTEBOOK)
+        job_id, job = wait_for_job(f"{FABRIC}/workspaces/{HARNESS_WS}/items/{nb}/jobs/instances/{args.attach}")
+        if job.get("status") != "Completed":
+            print(f"Notebook job ended {job.get('status')}: {json.dumps(job.get('failureReason'))[:1500]}")
+        run_id = args.run_id
+        if not run_id:   # the newest run folder; run ids start with their UTC start time
+            lake_id = item_id(HARNESS_WS, "Lakehouse", LAKEHOUSE)
+            url = (f"{ONELAKE}/{HARNESS_WS}?resource=filesystem&recursive=false&directory="
+                   + urllib.parse.quote(f"{lake_id}/Files/harness/runs"))
+            _, _, out = http("GET", url, resource="https://storage.azure.com", headers={"x-ms-version": "2023-11-03"})
+            run_id = sorted(p["name"].rsplit("/", 1)[-1] for p in out.get("paths", []))[-1]
+            print(f"Newest run folder: {run_id}")
+        summary = pull_results(run_id, job_id)
+        if summary:
+            print(summary.read_text(encoding="utf-8"))
+        return
     targets = [t.strip() for t in args.targets.split(",") if t.strip()]
     if not (ROOT / "models" / args.variant).is_dir():
         sys.exit(f"models/{args.variant} does not exist")
