@@ -46,4 +46,4 @@ In the v99 runs, Power Query set peaks of 13 to 23 GB and the calculated columns
 | F2 | 1M | first | refreshed | | | |
 | F2 | 1M | second, right after the first | refreshed | | | |
 
-On F64 the peak is 686 MB, of which 430 MB is Power Query. The baseline peaks at 785 MB with 677 MB in Power Query. The part outside Power Query grows from about 110 MB to about 260 MB. Each calculated column takes 0.6 to 1.2 seconds to compute, `Sales Line Label` 3.5 seconds. The model grows from 76 MB to 106 MB (backup size in the refresh log).
+On F64 the peak is 686 MB, of which 430 MB is Power Query. The baseline peaks at 785 MB with 677 MB in Power Query. The part outside Power Query grows from about 110 MB to about 260 MB. Each calculated column takes 0.6 to 1.2 seconds to compute, `Sales Line Label` 3.5 seconds. The model grows from 73 MB to 101 MB (backup size in the refresh log, MB of 1,048,576 bytes).

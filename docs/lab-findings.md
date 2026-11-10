@@ -13,8 +13,9 @@ A customer had a semantic model of 124 MB. It refreshed on a Pro workspace but f
 - Baseline (v00): a clean star schema. Sales fact, Customer, Product, Store, Date, Currency Exchange. Typed columns, no calculated columns or tables, single direction relationships, auto date/time off.
 - Variants: each model folder changes one thing, or a small set of things, against the baseline or against a diagnostic parent. Each has a README with the change and its results.
 - Capacities: an F2 workspace and an F64 workspace. One Pro run.
-- Measurement on F64: Fabric workspace monitoring (`SemanticModelLogs`). The `ExecutionMetrics` event of each refresh gives `approximatePeakMemConsumptionKB` (peak of the whole refresh) and `mEnginePeakMemoryKB` (peak of the Power Query engine), plus duration and CPU. The `Backup` step gives the size of the committed model. Queries are in `analysis/refresh-memory.kql`.
+- Measurement on F64: Fabric workspace monitoring (`SemanticModelLogs`). The `ExecutionMetrics` event of each refresh gives `approximatePeakMemConsumptionKB` (peak of the whole refresh) and `mEnginePeakMemoryKB` (peak of the Power Query engine), plus duration and CPU. The `Backup` step gives the size of the committed model in bytes. Queries are in `analysis/refresh-memory.kql`.
 - Measurement on F2: pass or fail only. F2 cannot carry workspace monitoring. A failure message reports "consumed memory", "memory limit" and "database size before command execution".
+- Units: MB is 1,048,576 bytes and GB is 1,024 MB everywhere, for peaks, limits and model sizes. Peaks come in KB from the engine; model sizes are the `Backup` bytes divided by 1,048,576.
 - Observed limits: F2 3,065 to 3,067 MB per model, F64 25,592 to 25,593 MB per model.
 
 ## Main findings
@@ -27,9 +28,9 @@ In every run where Power Query does heavy work (sorts, Group By, buffers, merges
 
 | Model | Change vs baseline | Model size | F64 peak |
 |---|---|---|---|
-| v00 | none | 76 MB | 785 MB |
-| v20 | two sorts of Sales in Power Query | 75 MB | 5,229 MB |
-| v21 | one summary table built with Group By in Power Query | 89 MB | 3,767 MB |
+| v00 | none | 73 MB | 785 MB |
+| v20 | two sorts of Sales in Power Query | 72 MB | 5,229 MB |
+| v21 | one summary table built with Group By in Power Query | 85 MB | 3,767 MB |
 
 v20 loads exactly the same table as the baseline. Only the row order differs. It needs almost 7 times the memory, and it fails on F2.
 
@@ -65,11 +66,11 @@ v99i adds one `Table.Buffer` to the Sales staging query, which three tables refe
 
 | Model | Data | F64 peak | Outside Power Query | Model size |
 |---|---|---|---|---|
-| v00 baseline | 1M | 785 MB | about 110 MB | 76 MB |
-| v22, 8 calculated columns on Sales | 1M | 686 MB | about 260 MB | 106 MB |
-| v23, 4 calculated tables | 1M | 1,405 MB | about 1,000 MB | 193 MB |
-| v00 baseline | 10M | 2,040 MB | about 210 MB | 816 MB |
-| v23, 4 calculated tables | 10M | 13,062 MB | about 11,900 MB | 1,923 MB |
+| v00 baseline | 1M | 785 MB | about 110 MB | 73 MB |
+| v22, 8 calculated columns on Sales | 1M | 686 MB | about 260 MB | 101 MB |
+| v23, 4 calculated tables | 1M | 1,405 MB | about 1,000 MB | 184 MB |
+| v00 baseline | 10M | 2,040 MB | about 210 MB | 778 MB |
+| v23, 4 calculated tables | 10M | 13,062 MB | about 11,900 MB | 1,833 MB |
 
 - Each calculated column takes 0.6 to 3.5 seconds to compute on 2.35M rows. Removing all eight from a heavy model changed its peak by 114 MB.
 - The calculated tables (a full copy of Sales with six RELATED columns, a SUMMARIZECOLUMNS summary, a product by day CROSSJOIN, CALENDARAUTO) add about 900 MB on 1M and about 11.7 GB on 10M. On 10M that model needs F64, while the clean baseline on the same data peaks at 2 GB.
@@ -112,40 +113,40 @@ The full kitchen sink model (v99) refreshed on Pro, giving a .pbix of 458 MB. On
 - Most models were refreshed once or a few times. Repeated successful runs of the same model varied by less than 1 percent in peak (v99d: 16,005 to 16,056 MB over three runs). Failed runs vary more, since the peak depends on when the engine stops.
 - F2 results are pass or fail only.
 - A second refresh right after the first, with the old data still in memory, passed on F2 for v22 and v23 on 1M data. Those models peak far below the limit, so this does not test how much the old copy adds.
-- The 124 MB customer model was not reproduced exactly. The lab shows the mechanism with models of 75 to 120 MB that need 3.5 to 5.3 GB.
+- The 124 MB customer model was not reproduced exactly. The lab shows the mechanism with models of 72 to 114 MB that need 3.5 to 5.3 GB.
 - Peak figures are the engine's approximate peak, not an operating system measurement.
 
 ## All runs
 
-Peaks are from F64 unless noted. Model size is the backup size from the F64 refresh log.
+Peaks are from F64 unless noted. Model size is the backup size from the F64 refresh log, in MB of 1,048,576 bytes.
 
 | Model | What it is | F64 result | F64 peak MB | Power Query MB | F2 result | Model size |
 |---|---|---|---|---|---|---|
-| v00-baseline | clean star schema, 1M | refreshed | 785 | 677 | refreshed | 76 MB |
-| v00-baseline | same, 10M | refreshed | 2,040 | 1,832 | not run | 816 MB |
-| v18-pq-10m-summary | baseline plus a 590 row summary grouped from the 10M file | refreshed | 1,562 | 1,372 | refreshed | 76 MB |
+| v00-baseline | clean star schema, 1M | refreshed | 785 | 677 | refreshed | 73 MB |
+| v00-baseline | same, 10M | refreshed | 2,040 | 1,832 | not run | 778 MB |
+| v18-pq-10m-summary | baseline plus a 590 row summary grouped from the 10M file | refreshed | 1,562 | 1,372 | refreshed | 73 MB |
 | v19-pq-heavy-10m | baseline plus five Power Query analyses on 10M | failed, Power Query limit | 14,366 to 24,464 at failure | | failed at 3,242 | |
-| v20-pq-sort | baseline plus two sorts of Sales | refreshed | 5,229 | 4,965 | failed | 75 MB |
-| v21-pq-group-by | baseline plus a Group By summary table | refreshed | 3,767 | 3,604 | failed | 89 MB |
-| v22-dax-calc-columns | baseline plus 8 calculated columns | refreshed | 686 | 430 | refreshed twice | 106 MB |
-| v23-dax-calc-tables | baseline plus 4 calculated tables, 1M | refreshed | 1,405 | 399 | refreshed twice | 193 MB |
-| v23-dax-calc-tables | same, 10M | refreshed | 13,062 | 1,202 | not run | 1,923 MB |
+| v20-pq-sort | baseline plus two sorts of Sales | refreshed | 5,229 | 4,965 | failed | 72 MB |
+| v21-pq-group-by | baseline plus a Group By summary table | refreshed | 3,767 | 3,604 | failed | 85 MB |
+| v22-dax-calc-columns | baseline plus 8 calculated columns | refreshed | 686 | 430 | refreshed twice | 101 MB |
+| v23-dax-calc-tables | baseline plus 4 calculated tables, 1M | refreshed | 1,405 | 399 | refreshed twice | 184 MB |
+| v23-dax-calc-tables | same, 10M | refreshed | 13,062 | 1,202 | not run | 1,833 MB |
 | v99-kitchen-sink | everything | failed at 25.6 GB | | | failed at 3,319 | Pro: 458 MB .pbix |
-| v99a | v99 without big calculated tables and flat table | refreshed | 16,054 | 15,932 | failed at 3,099 | 194 MB |
-| v99d | v99a plus an unused heavy query | refreshed | 16,010 | 15,925 | not run | 194 MB |
-| v99e | v99d plus the flat table loaded | refreshed | 22,889 | 22,766 | not run | 338 MB |
-| v99f | v99e plus three calculated tables | refreshed | 22,752 | 22,600 | not run | 379 MB |
-| v99g | v99f plus a copy of Sales | refreshed | 23,025 | 22,899 | not run | 559 MB |
+| v99a | v99 without big calculated tables and flat table | refreshed | 16,054 | 15,932 | failed at 3,099 | 185 MB |
+| v99d | v99a plus an unused heavy query | refreshed | 16,010 | 15,925 | not run | 185 MB |
+| v99e | v99d plus the flat table loaded | refreshed | 22,889 | 22,766 | not run | 323 MB |
+| v99f | v99e plus three calculated tables | refreshed | 22,752 | 22,600 | not run | 361 MB |
+| v99g | v99f plus a copy of Sales | refreshed | 23,025 | 22,899 | not run | 533 MB |
 | v99h | v99g plus two staging buffers | failed at 25.6 GB | | | not run | |
 | v99i | v99g plus the Sales staging buffer | failed at 25.6 GB | | | not run | |
-| v99j | v99g plus the Customer staging buffer | refreshed | 22,894 | 22,789 | not run | 559 MB |
-| v99k | v99a without any Table.Buffer | refreshed | 12,992 | 12,892 | failed | 194 MB |
-| v99l | v99k without calculated columns | refreshed | 12,878 | 12,760 | failed at 3,146 | 166 MB |
-| v99m | v99k with the baseline Power Query | refreshed | 627 | 272 | refreshed | 107 MB |
-| v99n | v99m plus text staging | refreshed | 624 | 294 | refreshed | 96 MB |
-| v99o | v99m plus sorts | refreshed | 5,337 | 5,048 | failed | 104 MB |
-| v99p | v99m plus high cardinality columns | refreshed | 746 | 335 | refreshed | 184 MB |
-| v99q | v99m plus the Group By table | refreshed | 3,477 | 3,243 | failed | 119 MB |
+| v99j | v99g plus the Customer staging buffer | refreshed | 22,894 | 22,789 | not run | 533 MB |
+| v99k | v99a without any Table.Buffer | refreshed | 12,992 | 12,892 | failed | 185 MB |
+| v99l | v99k without calculated columns | refreshed | 12,878 | 12,760 | failed at 3,146 | 158 MB |
+| v99m | v99k with the baseline Power Query | refreshed | 627 | 272 | refreshed | 102 MB |
+| v99n | v99m plus text staging | refreshed | 624 | 294 | refreshed | 92 MB |
+| v99o | v99m plus sorts | refreshed | 5,337 | 5,048 | failed | 99 MB |
+| v99p | v99m plus high cardinality columns | refreshed | 746 | 335 | refreshed | 175 MB |
+| v99q | v99m plus the Group By table | refreshed | 3,477 | 3,243 | failed | 114 MB |
 
 ## Evidence files
 

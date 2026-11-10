@@ -40,7 +40,7 @@ None. This is the control. It sets the reference numbers for model size, peak re
 | Capacity | Data | Result | Peak MB | Power Query MB | Duration | Model size |
 |---|---|---|---|---|---|---|
 | F2 | 1M | refreshed | | | 2 min | |
-| F64 | 1M | refreshed | 785 | 677 | 0.7 min | 76 MB |
-| F64 | 10M | refreshed | 2,040 | 1,832 | 6 min | 816 MB |
+| F64 | 1M | refreshed | 785 | 677 | 0.7 min | 73 MB |
+| F64 | 10M | refreshed | 2,040 | 1,832 | 6 min | 778 MB |
 
-Model size is the backup size in the refresh log. On 1M the model is 76 MB, a bit above the 40 to 60 MB expected. On 10M the peak stays below the 3 GB limit of F2, so a clean star schema of 23.7M sales rows is expected to fit on F2.
+Model size is the backup size in the refresh log, in MB of 1,048,576 bytes. On 1M the model is 73 MB, a bit above the 40 to 60 MB expected. On 10M the peak stays below the 3 GB limit of F2, so a clean star schema of 23.7M sales rows is expected to fit on F2.
