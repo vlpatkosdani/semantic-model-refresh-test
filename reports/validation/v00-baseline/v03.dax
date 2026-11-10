@@ -1,0 +1,13 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS('Date'[Year], "Sales_Amount", 'Sales'[Sales Amount])
+
+	VAR __DS0BodyLimited = 
+		SAMPLE(3502, __DS0Core, 'Date'[Year], 1)
+
+EVALUATE
+	__DS0BodyLimited
+
+ORDER BY
+	'Date'[Year]

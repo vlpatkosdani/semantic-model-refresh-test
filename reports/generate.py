@@ -46,7 +46,7 @@ def read_model(variant):
         sys.exit(f"{tables_dir} not found")
     model = {}
     for f in sorted(tables_dir.glob("*.tmdl")):
-        table, cols, measures, current = None, {}, set(), None
+        table, cols, types, measures, current = None, {}, {}, set(), None
         for line in f.read_text(encoding="utf-8").splitlines():
             m = re.match(r"^table\s+(.+?)\s*$", line)
             if m:
@@ -65,8 +65,11 @@ def read_model(variant):
             m = re.match(r"^\t\tsortByColumn:\s*(.+?)\s*$", line)
             if m and current:
                 cols[current] = unquote(m.group(1))
+            m = re.match(r"^\t\tdataType:\s*(\w+)", line)
+            if m and current:
+                types[current] = m.group(1)
         if table:
-            model[table] = {"columns": cols, "measures": measures}
+            model[table] = {"columns": cols, "types": types, "measures": measures}
     return model
 
 
@@ -80,7 +83,8 @@ def resolve(model, ref):
     if name in model[table]["measures"]:
         return {"table": table, "name": name, "kind": "measure"}
     if name in model[table]["columns"]:
-        return {"table": table, "name": name, "kind": "column", "sort_by": model[table]["columns"][name]}
+        return {"table": table, "name": name, "kind": "column", "sort_by": model[table]["columns"][name],
+                "type": model[table]["types"].get(name, "string")}
     sys.exit(f"{table}[{name}] not in the model")
 
 
@@ -95,7 +99,12 @@ def dax_col(f, name=None):
 
 
 def alias(f):
-    return re.sub(r"[^A-Za-z0-9_]", "_", f["name"])
+    """Result column name as Desktop writes it: 'Margin %' -> Margin__, '# Orders' -> v__Orders."""
+    a = re.sub(r"[^A-Za-z0-9_]", "_", f["name"])
+    return a if a[:1].isalpha() else "v" + a
+
+
+NUMERIC = {"int64", "double", "decimal", "dateTime"}
 
 
 def group_cols(cols):
@@ -109,7 +118,13 @@ def group_cols(cols):
 
 
 def order_cols(cols):
-    return [dax_col(c, c["sort_by"]) if c.get("sort_by") else dax_col(c) for c in cols]
+    """Sort keys: the sort-by column first, then the column itself (Desktop orders by both)."""
+    out = []
+    for c in cols:
+        if c.get("sort_by"):
+            out.append(dax_col(c, c["sort_by"]))
+        out.append(dax_col(c))
+    return out
 
 
 def level(c):
@@ -141,17 +156,19 @@ def dax_for(v):
         return f"EVALUATE\n\tROW({m_args})"
 
     if t in ("clusteredColumnChart", "clusteredBarChart", "lineChart"):
+        # No sort is set on the visuals, so Desktop orders by the axis. A single numeric or date
+        # axis is continuous and sampled; a text axis gets a window of 1,001 categories.
         cats = v["fields"]["category"]
         g = ", ".join(group_cols(cats))
-        if t == "lineChart":   # ordered by the axis
-            order = ", ".join(order_cols(cats))
-            top = f"TOPN(3502, __DS0Core, {', '.join(c + ', 1' for c in order_cols(cats))})"
-        else:                  # ordered by the first measure, descending
-            order = f"[{alias(meas[0])}] DESC, " + ", ".join(order_cols(cats))
-            top = f"TOPN(1001, __DS0Core, [{alias(meas[0])}], 0, {', '.join(c + ', 1' for c in order_cols(cats))})"
+        keys = order_cols(cats)
+        order = ", ".join(keys)
+        if len(cats) == 1 and cats[0]["type"] in NUMERIC and t != "clusteredBarChart":
+            var, body = "__DS0BodyLimited", f"SAMPLE(3502, __DS0Core, {', '.join(k + ', 1' for k in keys)})"
+        else:
+            var, body = "__DS0PrimaryWindowed", f"TOPN(1001, __DS0Core, {', '.join(k + ', 1' for k in keys)})"
         return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({g}, {m_args})\n"
-                f"\tVAR __DS0PrimaryWindowed =\n\t\t{top}\n"
-                f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{order}")
+                f"\tVAR {var} =\n\t\t{body}\n"
+                f"EVALUATE\n\t{var}\nORDER BY\n\t{order}")
 
     if t == "tableEx":
         cols = [f for f in v["fields"]["values"] if f["kind"] == "column"]
@@ -163,21 +180,39 @@ def dax_for(v):
                 f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{order}")
 
     if t == "pivotTable":
-        rows, cols = v["fields"].get("rows", []), v["fields"].get("columns", [])
-        parts, keys = [], []   # keys: (expression, descending)
-        for axis, total in ((rows, "IsGrandTotalRowTotal"), (cols, "IsGrandTotalColumnTotal")):
-            if not axis:
-                continue
-            dax, names = rollup_levels(axis, total)
-            parts.append(dax)
-            for c, fl in zip(axis, names):
-                keys += [(f"[{fl}]", True), (order_cols([c])[0], False)]
-        g = ", ".join(parts)
-        flags = [k + (" DESC" if d else "") for k, d in keys]
-        top_keys = ", ".join(f"{k}, {0 if d else 1}" for k, d in keys)
-        return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({g}, {m_args})\n"
-                f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, {top_keys})\n"
-                f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{', '.join(flags)}")
+        # A matrix opens collapsed: Desktop queries only the top level of rows and of columns.
+        # Deeper levels are queried when a user expands them, which the workload does not do.
+        rows, cols = v["fields"].get("rows", [])[:1], v["fields"].get("columns", [])[:1]
+        row_dax, row_flags = rollup_levels(rows, "IsGrandTotalRowTotal")
+        row_keys = []   # (expression, descending): subtotal flag first, then the level's sort keys
+        for c, fl in zip(rows, row_flags):
+            row_keys += [(f"[{fl}]", True)] + [(k, False) for k in order_cols([c])]
+        if not cols:
+            # Rows only: one window of 502, like a table.
+            top_keys = ", ".join(f"{k}, {0 if d else 1}" for k, d in row_keys)
+            order = ", ".join(k + (" DESC" if d else "") for k, d in row_keys)
+            return (f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({row_dax}, {m_args})\n"
+                    f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(502, __DS0Core, {top_keys})\n"
+                    f"EVALUATE\n\t__DS0PrimaryWindowed\nORDER BY\n\t{order}")
+        # Rows and columns: a window of 102 row groups and 102 column groups, joined by a column
+        # index, returned as two result sets (column headers, then the body). As in Desktop.
+        col_dax, col_flags = rollup_levels(cols, "IsGrandTotalColumnTotal")
+        col_keys = []
+        for c, fl in zip(cols, col_flags):
+            col_keys += [f"[{fl}]"] + order_cols([c])
+        row_summ = ", ".join(group_cols(rows) + [f"[{f}]" for f in row_flags])
+        col_summ = ", ".join(group_cols(cols) + [f"[{f}]" for f in col_flags])
+        top_rows = ", ".join(f"{k}, {0 if d else 1}" for k, d in row_keys)
+        return (
+            f"DEFINE\n\tVAR __DS0Core =\n\t\tSUMMARIZECOLUMNS({row_dax}, {col_dax}, {m_args})\n"
+            f"\tVAR __DS0PrimaryWindowed =\n\t\tTOPN(102, SUMMARIZE(__DS0Core, {row_summ}), {top_rows})\n"
+            f"\tVAR __DS0SecondaryBase =\n\t\tSUMMARIZE(__DS0Core, {col_summ})\n"
+            f"\tVAR __DS0Secondary =\n\t\tTOPN(102, __DS0SecondaryBase, {', '.join(k + ', 1' for k in col_keys)})\n"
+            f"\tVAR __DS0BodyLimited =\n\t\tNATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, "
+            f"\"ColumnIndex\", __DS0Secondary, {', '.join(k + ', ASC' for k in col_keys)}))\n"
+            f"EVALUATE\n\t__DS0Secondary\nORDER BY\n\t{', '.join(col_keys)}\n"
+            f"EVALUATE\n\t__DS0BodyLimited\nORDER BY\n\t"
+            + ", ".join(k + (" DESC" if d else "") for k, d in row_keys) + ", [ColumnIndex]")
 
     sys.exit(f"visual type {t} has no DAX template")
 

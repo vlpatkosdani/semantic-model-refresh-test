@@ -1,0 +1,5 @@
+// DAX Query
+EVALUATE
+	ROW(
+	"Margin__", 'Sales'[Margin %]
+)

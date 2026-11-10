@@ -1,0 +1,13 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS('Store'[Country], "Total_Quantity", 'Sales'[Total Quantity])
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(1001, __DS0Core, 'Store'[Country], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	'Store'[Country]

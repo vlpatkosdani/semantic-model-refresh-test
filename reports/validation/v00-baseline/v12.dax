@@ -1,0 +1,13 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS('Date'[Year Quarter], 'Date'[Year Quarter Number], "Margin__", 'Sales'[Margin %])
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(1001, __DS0Core, 'Date'[Year Quarter Number], 1, 'Date'[Year Quarter], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	'Date'[Year Quarter Number], 'Date'[Year Quarter]

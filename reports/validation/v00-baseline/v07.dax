@@ -1,0 +1,5 @@
+// DAX Query
+EVALUATE
+	ROW(
+	"v__Orders", 'Sales'[# Orders]
+)

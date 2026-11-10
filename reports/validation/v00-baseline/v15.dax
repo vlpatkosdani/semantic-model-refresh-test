@@ -1,0 +1,17 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			ROLLUPADDISSUBTOTAL('Customer'[Continent], "IsGrandTotalRowTotal"),
+			"Sales_Amount", 'Sales'[Sales Amount],
+			"Margin__", 'Sales'[Margin %]
+		)
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[Continent], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Customer'[Continent]
