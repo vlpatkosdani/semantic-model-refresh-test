@@ -416,7 +416,7 @@ def page_visuals(p, visuals):
     return [by_id[i] for i in p["visuals"]]
 
 
-def page_filters(spec, visuals):
+def page_filters(variant, spec, visuals):
     """Slicers filter every other visual on their page (Desktop's default interactions).
 
     The DAX is stored per visual, so a visual on a page with slicers may not be on any other page.
@@ -427,7 +427,9 @@ def page_filters(spec, visuals):
             pages_of.setdefault(v["id"], []).append(p["name"])
     for p in spec["pages"]:
         chosen = page_visuals(p, visuals)
-        slicers = [v for v in chosen if v["type"] == "slicer" and v.get("selected")]
+        # Desktop passes the slicer filters in the order of the slicers' visual names.
+        slicers = sorted((v for v in chosen if v["type"] == "slicer" and v.get("selected")),
+                         key=lambda v: stable_id(variant, p["name"], v["id"]))
         if not slicers:
             continue
         for v in chosen:
@@ -458,7 +460,7 @@ def main():
 
     report = build_report(variant, spec, visuals)
 
-    filters = page_filters(spec, visuals)
+    filters = page_filters(variant, spec, visuals)
     queries = {"variant": variant, "spec_version": spec["version"], "visuals": {}, "pages": {}}
     for v in visuals:
         queries["visuals"][v["id"]] = {"type": v["type"], "title": v["title"],

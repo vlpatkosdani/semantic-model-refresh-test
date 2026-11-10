@@ -1,0 +1,10 @@
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Germany"}, 'Customer'[Country])
+
+	VAR __DS0FilterTable2 = 
+		TREATAS({"Computers"}, 'Product'[Category])
+
+EVALUATE
+	SUMMARIZECOLUMNS(__DS0FilterTable, __DS0FilterTable2, "Order_Count", IGNORE('Orders'[Order Count]))
