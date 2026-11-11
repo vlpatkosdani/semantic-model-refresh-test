@@ -63,3 +63,12 @@ Query workload (run `20261110T130235Z-v22-817d`, all 792 queries succeeded), com
 | p20 | one by one | 641 ms | 782 ms | 1,906 ms | 2,236 ms | 58 MB | 58 MB |
 
 The slowest visual on p20 is v20 (orders by category and continent) on both models. It took 1,047 ms on v22 against 672 ms on v00 when all 20 visuals ran at once, and 782 ms against 641 ms one by one. The other visuals that group over Sales (v05, v14, v18) were also 50 to 100 ms slower when run at once. No visual uses the calculated columns. For comparison, v27, an unchanged copy of the baseline, measured 766 ms for v20 on the same page. This is one run per model, so a repeat run of v00 and v22 is needed before calling the difference an effect of the wider Sales table.
+
+Repeat runs on 2026-11-10 (v00 `20261110T194546Z-v00-cdd8`, v22 `20261110T195815Z-v22-cca3`), slowest visual on p20, cold cache, median of 5 repeats:
+
+| Run | v00 all at once | v22 all at once | v00 one by one | v22 one by one |
+|---|---|---|---|---|
+| first | 672 ms | 1,047 ms | 641 ms | 782 ms |
+| repeat | 719 ms | 750 ms | 688 ms | 625 ms |
+
+In the repeat v22 is as fast as v00, so the first run's 1,047 ms was run-to-run spread, not an effect of the calculated columns. Calculated columns that no visual uses do not change query time here. The repeat's per-page summary file was not downloaded (the sign-in token expired during the download, and the F64 workspace lost its capacity afterwards); the per-query rows are in `results/query-runs.csv` and `results/query-pages.csv`.
