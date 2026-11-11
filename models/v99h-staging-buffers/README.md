@@ -21,6 +21,10 @@ This model is now v99 with `CopyCount = 1` instead of 2, plus the auto date/time
 | v99g | v99f plus `Sales Copy`, one copy | refreshed |
 | v99h | v99g plus staging buffers | failed, cancelled at 25,603 MB |
 
+## Premium Per User (100 GB per model)
+
+Refreshed on 2026-11-11, 1M data, measured with an XMLA trace (harness run `20261111T081746Z-v99h-601b`): peak 25,971 MB, Power Query 25,814 MB, 34 min, 38,422,496 rows, model 534 MB. For comparison, v99g (the same model without the staging buffers) peaked at 23,025 MB on F64. Premium Per User runs on shared hardware, so this is recorded as its own capacity, PPU.
+
 ## How to read the result
 
 - If H fails on F64, the two staging buffers are what pushes v99 past 25 GB. Together with the v99d first version failure, that is two independent failures with the buffers and none without them. `mEnginePeakMemoryKB` in the ExecutionMetrics event should show whether the memory is in the Power Query engine or in the semantic model engine.

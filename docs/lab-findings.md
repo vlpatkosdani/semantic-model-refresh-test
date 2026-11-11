@@ -62,6 +62,8 @@ Measured alone on top of the same model: text staging adds almost nothing, sorts
 
 v99i adds one `Table.Buffer` to the Sales staging query, which three tables reference. It fails on F64 at the 25.6 GB limit. The same buffer on the Customer staging query (v99j, 105K rows) changes nothing. This pattern is rare in practice, so the article should treat it as an extreme example rather than the typical cause.
 
+Measured on Premium Per User (100 GB per model) with an XMLA trace on 2026-11-11, the buffer is the last step over the limit, not a large effect on its own. v99g without it peaked at 23,025 MB on F64. v99i, with the Sales buffer, needs 23,893 MB, and v99h, with both buffers, 25,971 MB (runs `20261111T090350Z-v99i-1beb` and `20261111T081746Z-v99h-601b`). The v99i peak is below F64's 25.6 GB limit, yet v99i was cancelled on F64 at 25,604 MB. Either the peak differs between F64 and Premium Per User, or it varies from run to run by more than the 1.7 GB of headroom; with one run on each, the lab cannot tell which. What holds: the model was already at 23 GB before the buffer, and it sits within a few GB of F64's limit with or without it.
+
 ### 7. Calculated columns are cheap, calculated tables are not, and they scale with data
 
 | Model | Data | F64 peak | Outside Power Query | Model size |
@@ -147,8 +149,8 @@ For v00 on 1M the service size is 73 MB, and a DAX query in the service over `IN
 | v99e | v99d plus the flat table loaded | refreshed | 22,889 | 22,766 | not run | 323 MB |  |  |
 | v99f | v99e plus three calculated tables | refreshed | 22,752 | 22,600 | not run | 361 MB |  |  |
 | v99g | v99f plus a copy of Sales | refreshed | 23,025 | 22,899 | not run | 533 MB |  |  |
-| v99h | v99g plus two staging buffers | failed at 25.6 GB | | | not run | |  |  |
-| v99i | v99g plus the Sales staging buffer | failed at 25.6 GB | | | not run | |  |  |
+| v99h | v99g plus two staging buffers | failed at 25.6 GB (PPU: refreshed, peak 25,971) | | 25,814 on PPU | not run | 534 MB on PPU |  |  |
+| v99i | v99g plus the Sales staging buffer | failed at 25.6 GB (PPU: refreshed, peak 23,893) | | 23,700 on PPU | not run | 534 MB on PPU |  |  |
 | v99j | v99g plus the Customer staging buffer | refreshed | 22,894 | 22,789 | not run | 533 MB |  |  |
 | v99k | v99a without any Table.Buffer | refreshed | 12,992 | 12,892 | failed | 185 MB |  |  |
 | v99l | v99k without calculated columns | refreshed | 12,878 | 12,760 | failed at 3,146 | 158 MB |  |  |

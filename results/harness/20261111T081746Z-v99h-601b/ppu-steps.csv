@@ -1,0 +1,338 @@
+Object,OperationDetailName,DurationSec,CpuSec,Rows
+fbca0670-b932-46b9-848d-2249ba6eb4be,TabularSequencePoint,2064.4,0.5,0
+Sales Flat.Sales Flat,TabularRefresh,2031.7,109.2,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,TabularRefresh,1858.6,33.8,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,Process,1347.3,33.7,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,ReadData,1346.9,33.6,2349091
+Sales Flat.Sales Flat,Process,1307.0,109.0,0
+Sales Flat.Sales Flat,ReadData,1305.9,109.0,2349091
+Sales Flat.Sales Flat,ExecuteSql,724.5,0.0,0
+Customer Stats.Customer Stats,TabularRefresh,539.0,3.2,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,ExecuteSql,511.2,0.0,0
+Customer Stats.Customer Stats,ExecuteSql,341.9,0.0,0
+Customer Stats.Customer Stats,Process,196.9,3.1,0
+Customer Stats.Customer Stats,ReadData,196.1,2.6,471482
+Sales Copy.Sales Copy,TabularRefresh,33.1,29.3,0
+Sales Copy.Sales Copy,Process,27.6,26.9,0
+Sales Copy.Sales Copy,ReadData,27.2,26.9,2349091
+Customer.Customer-bee8b62a-fee2-49b8-a0b6-5518e67a2d59,TabularRefresh,24.0,3.0,0
+Product Date Grid.Product Date Grid,VertiPaq,18.4,17.3,0
+Sales Flat.Sales Flat,AnalyzeEncodeData,15.6,18.2,0
+Sales Flat.Sales Flat,VertiPaq,15.2,14.9,0
+Product Date Grid.Product Date Grid,TabularRefresh,14.8,12.6,0
+Product Date Grid.Product Date Grid,Process,14.8,12.6,0
+Product Date Grid.Product Date Grid,ReadData,13.3,12.5,10113306
+<NA>,Commit,13.1,0.0,
+Sales Flat.Order Line Key,TabularRefresh,13.0,0.0,0
+Sales Summary.Sales Summary,TabularRefresh,12.9,6.1,0
+Customer.Customer-bee8b62a-fee2-49b8-a0b6-5518e67a2d59,ExecuteSql,12.3,0.0,0
+Customer.Customer-bee8b62a-fee2-49b8-a0b6-5518e67a2d59,Process,11.6,3.0,0
+Customer.Customer-bee8b62a-fee2-49b8-a0b6-5518e67a2d59,ReadData,11.4,2.9,104990
+Sales.Sales Line Label,TabularRefresh,8.5,8.2,0
+Sales Summary.Sales Summary,Process,6.4,2.5,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,AnalyzeEncodeData,5.8,7.9,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,VertiPaq,5.4,5.4,0
+Sales Copy.Sales Copy,AnalyzeEncodeData,3.0,5.5,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,TabularRefresh,2.9,0.1,0
+Sales Copy.Sales Copy,CompressSegment,2.9,4.5,0
+Sales.Customer Name,TabularRefresh,2.8,2.1,0
+Sales Flat.Sales Flat,CompressSegment,2.7,4.8,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,ExecuteSql,2.6,0.0,0
+Sales Copy.Sales Copy,VertiPaq,2.6,2.6,0
+Sales.Customer Lifetime Sales,TabularRefresh,2.5,1.5,0
+fbca0670-b932-46b9-848d-2249ba6eb4be,Backup,2.5,0.6,559374984
+Sales Summary.Sales Summary,ReadData,2.5,2.5,1492362
+Sales.Product Name,TabularRefresh,2.5,2.2,0
+Sales.Sales-4929449f-be0b-48cf-a44e-c644698415ba,CompressSegment,2.2,3.2,0
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,TabularRefresh,2.1,1.0,0
+Sales Summary.Sales Summary,AnalyzeEncodeData,2.0,2.2,0
+Sales Summary.Sales Summary,VertiPaq,1.8,1.8,0
+Sales.Product Category,TabularRefresh,1.8,1.8,0
+Sales.Product Price Rank,TabularRefresh,1.7,1.6,0
+Sales.Store Name,TabularRefresh,1.7,1.6,0
+Sales.Customer Country,TabularRefresh,1.6,1.5,0
+Sales.Order Line,TabularRefresh,1.5,0.0,0
+Sales Copy.Order Line,TabularRefresh,1.3,0.0,0
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,Process,1.1,1.0,0
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,ReadData,1.1,0.9,100450
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,ExecuteSql,0.8,0.0,0
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,TabularRefresh,0.8,0.2,0
+Product Date Grid.Product Date Grid,CompressSegment,0.8,1.7,0
+Sales Copy.Order Number,TabularRefresh,0.7,0.0,0
+Sales Copy.Order DateTime,TabularRefresh,0.7,0.0,0
+Model.a3a67f07-ddee-4df7-b136-6009b1247cca,TabularRefresh,0.6,0.0,0
+Sales.Order Number,TabularRefresh,0.6,0.0,0
+Sales Flat.Order Number,TabularRefresh,0.6,0.0,0
+Sales.Order DateTime,TabularRefresh,0.6,0.0,0
+Customer.Name,TabularRefresh,0.5,0.0,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,TabularRefresh,0.4,0.1,0
+Sales Copy.Customer Name,TabularRefresh,0.4,0.0,0
+Customer.Address,TabularRefresh,0.4,0.0,0
+Sales Flat.Customer Name,TabularRefresh,0.4,0.0,0
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,ReadData,0.4,0.1,4018
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,Process,0.4,0.1,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,ExecuteSql,0.3,0.0,0
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,ExecuteSql,0.3,0.0,0
+Sales Flat.CustomerKey,TabularRefresh,0.3,0.0,0
+Sales Summary.Sales Amount,TabularRefresh,0.3,0.0,0
+Sales Copy.Sales Line Label,TabularRefresh,0.3,0.0,0
+Sales Summary.Sales Summary,CompressSegment,0.2,0.5,0
+Customer Stats.Customer Stats,VertiPaq,0.2,0.2,0
+Customer Stats.Customer Stats,AnalyzeEncodeData,0.2,0.2,0
+Customer Stats.Sales Amount,TabularRefresh,0.2,0.0,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,Process,0.2,0.0,0
+Sales Copy.CustomerKey,TabularRefresh,0.2,0.0,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,ReadData,0.2,0.0,2517
+Calendar Auto.Calendar Auto,Process,0.1,0.1,0
+Calendar Auto.Calendar Auto,TabularRefresh,0.1,0.1,0
+Calendar Auto.Calendar Auto,ReadData,0.1,0.1,33603
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,TabularRefresh,0.1,0.0,0
+Model.0b5f92d3-53dd-41de-9f8f-6776ebfdcb67,TabularRefresh,0.1,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,Process,0.1,0.1,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,TabularRefresh,0.1,0.1,0
+Sales Copy.Customer Lifetime Sales,TabularRefresh,0.1,0.0,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,CompressSegment,0.1,0.1,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,ReadData,0.1,0.1,24837
+Customer.Customer-bee8b62a-fee2-49b8-a0b6-5518e67a2d59,VertiPaq,0.1,0.1,0
+Customer.City,TabularRefresh,0.1,0.0,0
+Sales Copy.Customer City,TabularRefresh,0.1,0.0,0
+Sales Flat.Net Price,TabularRefresh,0.1,0.0,0
+fbca0670-b932-46b9-848d-2249ba6eb4be,TabularCommit,0.1,0.1,0
+Sales Flat.Customer City,TabularRefresh,0.1,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,TabularRefresh,0.1,0.0,0
+Customer Stats.CustomerKey,TabularRefresh,0.1,0.0,0
+Sales Summary.CustomerKey,TabularRefresh,0.1,0.0,0
+Customer.Zip Code,TabularRefresh,0.1,0.0,0
+Customer.Geography,TabularRefresh,0.1,0.0,0
+Customer.Customer-bee8b62a-fee2-49b8-a0b6-5518e67a2d59,CompressSegment,0.1,0.2,0
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,VertiPaq,0.0,0.0,0
+Sales.Quantity,TabularRefresh,0.0,0.0,0
+Sales.ProductKey,TabularRefresh,0.0,0.0,0
+Store.Square Meters,TabularRefresh,0.0,0.0,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,ReadData,0.0,0.0,74
+Calendar Auto.Date,TabularRefresh,0.0,0.0,0
+Calendar Auto.Calendar Auto,CompressSegment,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.MonthNo,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.Month,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Quarter,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.Day,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Month,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,VertiPaq,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.MonthNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,Process,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,CompressSegment,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Day,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Date Hierarchy,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Date,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Year,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,ReadData,0.0,0.0,5478
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.QuarterNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Quarter,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.MonthNo,TabularRefresh,0.0,0.0,0
+Calendar Auto.Year,TabularRefresh,0.0,0.0,0
+Store.Open Date,TabularRefresh,0.0,0.0,0
+Store.Name,TabularRefresh,0.0,0.0,0
+Store.Country,TabularRefresh,0.0,0.0,0
+Store.Close Date,TabularRefresh,0.0,0.0,0
+Sales.Unit Price,TabularRefresh,0.0,0.0,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,Process,0.0,0.0,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,CompressSegment,0.0,0.0,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,AnalyzeEncodeData,0.0,0.0,0
+Store.Store Code,TabularRefresh,0.0,0.0,0
+Store.Status,TabularRefresh,0.0,0.0,0
+Calendar Auto.Calendar Auto,VertiPaq,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.Year,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.Date,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.Date Hierarchy,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.Day,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,CompressSegment,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,Process,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.QuarterNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.MonthNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Quarter,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,VertiPaq,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Month,TabularRefresh,0.0,0.0,0
+Date.Year Quarter Number,TabularRefresh,0.0,0.0,0
+Date.Year Quarter,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.QuarterNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Date.Year Month Number,TabularRefresh,0.0,0.0,0
+Date.Year Month,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Month,TabularRefresh,0.0,0.0,0
+Date.Year,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,ReadData,0.0,0.0,2556
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,Process,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,VertiPaq,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,CompressSegment,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Day,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Date,TabularRefresh,0.0,0.0,0
+LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0.Date Hierarchy,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.Year,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,CompressSegment,0.0,0.0,0
+Date.Year Month Short,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Year,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Date Hierarchy,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Day,TabularRefresh,0.0,0.0,0
+LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12.Date,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.Year,TabularRefresh,0.0,0.0,0
+Product Date Grid.ProductKey,TabularRefresh,0.0,0.0,0
+Product Date Grid.Day,TabularRefresh,0.0,0.0,0
+Product.Brand,TabularRefresh,0.0,0.0,0
+Product Date Grid.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Model.a7c057d3-ede2-4fdd-812a-d5be2dc1569f,TabularRefresh,0.0,0.0,0
+Model.7af29c93-a4a1-4082-83d2-9f57ab371736,TabularRefresh,0.0,0.0,0
+Model.7a71d08b-0c26-46a2-b754-69b8e39a97f9,TabularRefresh,0.0,0.0,0
+Model.6b5e0dab-b62f-4ded-8a7b-f2e12bd9c6b5,TabularRefresh,0.0,0.0,0
+Model.6b5a63d6-f111-4083-a598-4da2693d5293,TabularRefresh,0.0,0.0,0
+Model.6029b9f6-210b-42fb-a96a-2a8bc3fd4d4b,TabularRefresh,0.0,0.0,0
+Product Date Grid.Category,TabularRefresh,0.0,0.0,0
+Model.f92796a2-a826-4e07-899a-ff3c6eceb911,TabularRefresh,0.0,0.0,0
+Model.15d460ac-5121-4fa3-9240-b70400d77763,TabularRefresh,0.0,0.0,0
+Model.55fa90e1-00c5-4666-8bc8-dde516c69228,TabularRefresh,0.0,0.0,0
+Product.ProductKey,TabularRefresh,0.0,0.0,0
+Product.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.Quarter,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.MonthNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.Month,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.QuarterNo,TabularRefresh,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,VertiPaq,0.0,0.0,0
+LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259.LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,ReadData,0.0,0.0,3653
+Sales.Unit Cost,TabularRefresh,0.0,0.0,0
+Sales.StoreKey,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.QuarterNo,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.Quarter,TabularRefresh,0.0,0.0,0
+Store.State,TabularRefresh,0.0,0.0,0
+Sales Copy.Customer Country,TabularRefresh,0.0,0.0,0
+Sales Copy.Delivery Date,TabularRefresh,0.0,0.0,0
+Sales Copy.Exchange Rate,TabularRefresh,0.0,0.0,0
+Product.Category,TabularRefresh,0.0,0.0,0
+Product.Category-Subcategory,TabularRefresh,0.0,0.0,0
+Product.Category Code,TabularRefresh,0.0,0.0,0
+Product.Color,TabularRefresh,0.0,0.0,0
+Product.Manufacturer,TabularRefresh,0.0,0.0,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,VertiPaq,0.0,0.0,0
+Product.Product Code,TabularRefresh,0.0,0.0,0
+Product.Product Name,TabularRefresh,0.0,0.0,0
+Product.Product-9730db17-a88f-43ad-b6f2-50ae8a679b18,AnalyzeEncodeData,0.0,0.1,0
+Product.Unit Cost,TabularRefresh,0.0,0.0,0
+Product.Unit Price,TabularRefresh,0.0,0.0,0
+Product.Weight,TabularRefresh,0.0,0.0,0
+Product.Weight Unit Measure,TabularRefresh,0.0,0.0,0
+Customer.Continent,TabularRefresh,0.0,0.0,0
+Customer.Birthday,TabularRefresh,0.0,0.0,0
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,VertiPaq,0.0,0.0,0
+Date.Day of Week,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,VertiPaq,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,ReadData,0.0,0.0,1
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,Process,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,CompressSegment,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,AnalyzeEncodeData,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.Date Hierarchy,TabularRefresh,0.0,0.0,0
+DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f.Date,TabularRefresh,0.0,0.0,0
+Product.Subcategory,TabularRefresh,0.0,0.0,0
+Product.Subcategory Code,TabularRefresh,0.0,0.0,0
+Customer.Country Code,TabularRefresh,0.0,0.0,0
+Sales Copy.Currency Code,TabularRefresh,0.0,0.0,0
+Sales Copy.Customer Continent,TabularRefresh,0.0,0.0,0
+Sales Copy.Net Price,TabularRefresh,0.0,0.0,0
+Customer Stats.Year,TabularRefresh,0.0,0.0,0
+Sales Copy.Quantity,TabularRefresh,0.0,0.0,0
+Sales Copy.Line Number,TabularRefresh,0.0,0.0,0
+Sales Copy.Product Subcategory,TabularRefresh,0.0,0.0,0
+Sales Copy.Product Price Rank,TabularRefresh,0.0,0.0,0
+Sales Copy.Product Name,TabularRefresh,0.0,0.0,0
+Sales Copy.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Sales Copy.Product Category,TabularRefresh,0.0,0.0,0
+Sales Copy.Product Brand,TabularRefresh,0.0,0.0,0
+Sales Copy.Order Date,TabularRefresh,0.0,0.0,0
+Sales Copy.Order Year,TabularRefresh,0.0,0.0,0
+Customer.CustomerKey,TabularRefresh,0.0,0.0,0
+Sales Flat.Customer State,TabularRefresh,0.0,0.0,0
+Sales Flat.Customer Country,TabularRefresh,0.0,0.0,0
+Sales Copy.ProductKey,TabularRefresh,0.0,0.0,0
+Sales Flat.Customer Continent,TabularRefresh,0.0,0.0,0
+Sales Flat.Currency Code,TabularRefresh,0.0,0.0,0
+Sales Flat.Brand,TabularRefresh,0.0,0.0,0
+Sales Flat.Category,TabularRefresh,0.0,0.0,0
+Sales Copy.Unit Cost,TabularRefresh,0.0,0.0,0
+Sales Copy.StoreKey,TabularRefresh,0.0,0.0,0
+Sales Copy.Store Name,TabularRefresh,0.0,0.0,0
+Sales Copy.Unit Price,TabularRefresh,0.0,0.0,0
+Sales Copy.Store Country,TabularRefresh,0.0,0.0,0
+Sales Flat.Store Name,TabularRefresh,0.0,0.0,0
+Sales Flat.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Date.Year-Quarter-Month,TabularRefresh,0.0,0.0,0
+Date.Year-Month,TabularRefresh,0.0,0.0,0
+Customer.Age,TabularRefresh,0.0,0.0,0
+Customer.Country,TabularRefresh,0.0,0.0,0
+Sales Copy.Copy Number,TabularRefresh,0.0,0.0,0
+Sales Flat.Order Date,TabularRefresh,0.0,0.0,0
+Sales Flat.Product Name,TabularRefresh,0.0,0.0,0
+Sales Flat.ProductKey,TabularRefresh,0.0,0.0,0
+Sales Flat.Quantity,TabularRefresh,0.0,0.0,0
+Sales Flat.Store Country,TabularRefresh,0.0,0.0,0
+Date.Working Day,TabularRefresh,0.0,0.0,0
+Store.Store-4e2fa8b8-517f-4c17-ae5a-7d36051099bc,VertiPaq,0.0,0.0,0
+fbca0670-b932-46b9-848d-2249ba6eb4be,MetadataTraversalDuringBackup,0.0,0.2,0
+Date.Month Short,TabularRefresh,0.0,0.0,0
+Date.Month Number,TabularRefresh,0.0,0.0,0
+Date.End of Month,TabularRefresh,0.0,0.0,0
+Date.Month,TabularRefresh,0.0,0.0,0
+Date.Day of Week Short,TabularRefresh,0.0,0.0,0
+Date.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Date.Quarter,TabularRefresh,0.0,0.0,0
+Store.StoreKey,TabularRefresh,0.0,0.0,0
+Sales Flat.Line Number,TabularRefresh,0.0,0.0,0
+Sales Flat.Exchange Rate,TabularRefresh,0.0,0.0,0
+Sales Flat.Day of Week,TabularRefresh,0.0,0.0,0
+Sales Flat.Delivery Date,TabularRefresh,0.0,0.0,0
+Sales Summary.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Sales Summary.Quantity,TabularRefresh,0.0,0.0,0
+Sales Summary.Orders,TabularRefresh,0.0,0.0,0
+Sales Summary.Category,TabularRefresh,0.0,0.0,0
+Sales Flat.Year Month,TabularRefresh,0.0,0.0,0
+Sales Flat.Year,TabularRefresh,0.0,0.0,0
+Sales Flat.Unit Price,TabularRefresh,0.0,0.0,0
+Sales Flat.Unit Cost,TabularRefresh,0.0,0.0,0
+Sales Flat.Subcategory,TabularRefresh,0.0,0.0,0
+Date.Day of Week Number,TabularRefresh,0.0,0.0,0
+Sales Flat.Month,TabularRefresh,0.0,0.0,0
+Date.Working Day Number,TabularRefresh,0.0,0.0,0
+Sales.Order Date,TabularRefresh,0.0,0.0,0
+Sales Flat.Store State,TabularRefresh,0.0,0.0,0
+Sales Flat.StoreKey,TabularRefresh,0.0,0.0,0
+Sales.Net Price,TabularRefresh,0.0,0.0,0
+Sales.CustomerKey,TabularRefresh,0.0,0.0,0
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,CompressSegment,0.0,0.0,0
+Sales.Exchange Rate,TabularRefresh,0.0,0.0,0
+Sales.Line Number,TabularRefresh,0.0,0.0,0
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,CompressSegment,0.0,0.0,0
+Calendar Auto.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Date.Date,TabularRefresh,0.0,0.0,0
+Date.Date-44d762f0-a871-4687-b253-096276d9658b,AnalyzeEncodeData,0.0,0.0,0
+Customer.State Code,TabularRefresh,0.0,0.0,0
+Customer.State,TabularRefresh,0.0,0.0,0
+Customer.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Sales.Delivery Date,TabularRefresh,0.0,0.0,0
+Customer.Gender,TabularRefresh,0.0,0.0,0
+Sales.Currency Code,TabularRefresh,0.0,0.0,0
+Calendar Auto.Month,TabularRefresh,0.0,0.0,0
+Sales Summary.Year,TabularRefresh,0.0,0.0,0
+Currency Exchange.ToCurrency,TabularRefresh,0.0,0.0,0
+Currency Exchange.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Currency Exchange.FromCurrency,TabularRefresh,0.0,0.0,0
+Customer Stats.Customer Stats,CompressSegment,0.0,0.0,0
+Currency Exchange.Exchange,TabularRefresh,0.0,0.0,0
+Currency Exchange.Date,TabularRefresh,0.0,0.0,0
+Store.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Sales.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Currency Exchange.Currency Exchange-84d00514-3ac1-4a6c-a61b-f2bed7b860be,AnalyzeEncodeData,0.0,0.0,0
+Customer Stats.RowNumber-2662979B-1795-4F74-8F37-6A1BA8059B61,TabularRefresh,0.0,0.0,0
+Customer Stats.Orders,TabularRefresh,0.0,0.0,0
+Customer Stats.Lines,TabularRefresh,0.0,0.0,0
