@@ -10,8 +10,16 @@
       "destinations": {
         "eventhouse": {
           "mode": "Auto"
+        },
+        "eventStream": {
+          "customEndpoint": {
+            "enabled": true
+          }
         }
       }
     }
-  ]
+  ],
+  "operationsAgent": {
+    "enabled": true
+  }
 }
