@@ -1,0 +1,13 @@
+// DAX Query
+DEFINE
+	VAR __DS0Core = 
+		VALUES('Customer Segment'[Segment])
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(101, __DS0Core, 'Customer Segment'[Segment], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	'Customer Segment'[Segment]

@@ -1,0 +1,6 @@
+// DAX Query
+DEFINE VAR __DS0FilterTable = 
+	TREATAS({"Gold"}, 'Customer Segment'[Segment])
+
+EVALUATE
+	SUMMARIZECOLUMNS(__DS0FilterTable, "Sales_Amount", IGNORE('Sales'[Sales Amount]))

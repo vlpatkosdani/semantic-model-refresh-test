@@ -1,0 +1,54 @@
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Gold"}, 'Customer Segment'[Segment])
+
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS(
+			ROLLUPADDISSUBTOTAL('Customer Segment'[Segment], "IsGrandTotalRowTotal"),
+			ROLLUPADDISSUBTOTAL('Date'[Year], "IsGrandTotalColumnTotal"),
+			__DS0FilterTable,
+			"Sales_Amount", 'Sales'[Sales Amount]
+		)
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(
+			102,
+			SUMMARIZE(__DS0Core, 'Customer Segment'[Segment], [IsGrandTotalRowTotal]),
+			[IsGrandTotalRowTotal],
+			0,
+			'Customer Segment'[Segment],
+			1
+		)
+
+	VAR __DS0SecondaryBase = 
+		SUMMARIZE(__DS0Core, 'Date'[Year], [IsGrandTotalColumnTotal])
+
+	VAR __DS0Secondary = 
+		TOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Date'[Year], 1)
+
+	VAR __DS0BodyLimited = 
+		NATURALLEFTOUTERJOIN(
+			__DS0PrimaryWindowed,
+			SUBSTITUTEWITHINDEX(
+				__DS0Core,
+				"ColumnIndex",
+				__DS0Secondary,
+				[IsGrandTotalColumnTotal],
+				ASC,
+				'Date'[Year],
+				ASC
+			)
+		)
+
+EVALUATE
+	__DS0Secondary
+
+ORDER BY
+	[IsGrandTotalColumnTotal], 'Date'[Year]
+
+EVALUATE
+	__DS0BodyLimited
+
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Customer Segment'[Segment], [ColumnIndex]

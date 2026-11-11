@@ -1,0 +1,16 @@
+// DAX Query
+DEFINE
+	VAR __DS0FilterTable = 
+		TREATAS({"Gold"}, 'Customer Segment'[Segment])
+
+	VAR __DS0Core = 
+		SUMMARIZECOLUMNS('Customer'[Country], __DS0FilterTable, "Sales_Amount", 'Sales'[Sales Amount])
+
+	VAR __DS0PrimaryWindowed = 
+		TOPN(1001, __DS0Core, 'Customer'[Country], 1)
+
+EVALUATE
+	__DS0PrimaryWindowed
+
+ORDER BY
+	'Customer'[Country]
