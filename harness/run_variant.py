@@ -251,7 +251,16 @@ def append_csv(target, text, job_id):
         with target.open(newline="", encoding="utf-8") as f:
             header = next(csv.reader(f), [])
         if header != fields:
-            sys.exit(f"{target} has different columns. Not touching it; the rows are in the run folder.")
+            if fields[:len(header)] != header:
+                sys.exit(f"{target} has different columns. Not touching it; the rows are in the run folder.")
+            # New columns added at the end: extend the header once, existing rows keep their values.
+            with target.open(newline="", encoding="utf-8") as f:
+                old = list(csv.reader(f))[1:]
+            with target.open("w", newline="", encoding="utf-8") as f:
+                w = csv.writer(f)
+                w.writerow(fields)
+                w.writerows(r + [""] * (len(fields) - len(r)) for r in old)
+            print(f"{target.name}: added columns {fields[len(header):]}")
     write_header = not target.exists()
     with target.open("a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -308,6 +317,8 @@ def main():
     ap.add_argument("--modes", default="cold,warm", help="queries task")
     ap.add_argument("--concurrency", default="seq,page", help="queries task")
     ap.add_argument("--repeats", default="5", help="queries task")
+    ap.add_argument("--clear-first", action="store_true",
+                    help="refresh task: run a clearValues refresh before the full refresh")
     ap.add_argument("--attach", metavar="JOB_ID", help="wait for a job that is already running and pull its results")
     ap.add_argument("--run-id", help="with --attach: the harness run id of that job")
     args = ap.parse_args()
@@ -343,7 +354,8 @@ def main():
 
     run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + args.variant.split("-")[0] + "-" + uuid.uuid4().hex[:4]
     params = {"variant": args.variant, "data_tag": data_tag, "targets": ",".join(targets),
-              "expected_commit": commit, "harness_run_id": run_id, "task": args.task}
+              "expected_commit": commit, "harness_run_id": run_id, "task": args.task,
+              "clear_first": "true" if args.clear_first else "false"}
     if args.task == "queries":
         qpath = f"reports/queries/{args.variant}.json"
         try:

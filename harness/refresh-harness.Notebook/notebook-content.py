@@ -32,6 +32,7 @@ pages = "p01,p05,p10,p20"     # queries task: pages to render
 modes = "cold,warm"           # queries task: cold clears the cache before each repeat; warm renders once unmeasured first
 concurrency = "seq,page"      # queries task: seq sends visuals one by one; page sends all visuals of a page at once
 repeats = "5"                 # queries task: measured renders per page, mode and concurrency
+clear_first = "false"         # refresh task: "true" runs a clearValues refresh first, so the model is empty when the full refresh starts
 
 # METADATA ********************
 
@@ -279,10 +280,10 @@ def num(s):
     return float(s.replace(",", "")) if s else None
 
 
-def refresh(cap, dataset_id):
+def refresh(cap, dataset_id, refresh_type="full"):
     ws = WORKSPACES[cap]
     base = f"v1.0/myorg/groups/{ws}/datasets/{dataset_id}/refreshes"
-    body = {"type": "full", "commitMode": "transactional", "maxParallelism": REFRESH_PARALLELISM, "retryCount": 0}
+    body = {"type": refresh_type, "commitMode": "transactional", "maxParallelism": REFRESH_PARALLELISM, "retryCount": 0}
     r = pbi.post(base, json=body)
     if r.status_code != 202:
         raise HarnessStop(f"{cap}: refresh request refused: HTTP {r.status_code} {r.text[:2000]}")
@@ -367,7 +368,7 @@ SemanticModelLogs
 | extend m = parse_json(EventText)
 | where isnotnull(m.tabularConnectionTimeoutMs)
 | extend TimeStart = todatetime(m.timeStart), TimeEnd = todatetime(m.timeEnd)
-| where TimeStart between ({kdt(start)} - 2m .. {kdt(start)} + 2m)
+| where TimeStart between ({kdt(start)} - 25s .. {kdt(start)} + 2m)
 | project Timestamp, Model = ItemName, TimeStart, TimeEnd,
           Result         = iff(toint(m.errorCount) > 0, "failed", "refreshed"),
           PeakMemMB      = round(todouble(m.approximatePeakMemConsumptionKB) / 1024, 0),
@@ -583,6 +584,10 @@ ROW_SCHEMA = StructType(
     + [StructField(c, StringType()) for c in [
         "model_size_source", "metrics_source", "refresh_request_id", "refresh_start_utc", "refresh_end_utc",
         "error_text"]]
+    # Added 2026-11-11. The command memory limit of a refresh is the SKU maximum minus what the model uses when
+    # the refresh starts; size_before_mb is the model's VertiPaq size in memory just before the full refresh.
+    + [StructField(c, DoubleType()) for c in ["size_before_mb", "command_limit_mb"]]
+    + [StructField(c, StringType()) for c in ["clear_first"]]
 )
 COLUMNS = [f.name for f in ROW_SCHEMA.fields]
 
@@ -676,9 +681,18 @@ def compare(row, hist):
         else:
             lines.append(f"- No v00-baseline harness run with a measured peak on {row['capacity']} {row['data_tag']} to compare with.")
 
+    before = row.get("size_before_mb")
+    if before is not None and pd.notna(before):
+        lines.append(f"- Model size in memory when the full refresh started: {fmt(before)}"
+                     f"{' (after clearValues)' if row.get('clear_first') == 'true' else ''}. The refresh may use the "
+                     f"SKU maximum minus this: {fmt(row.get('command_limit_mb'))} on {row['capacity']}.")
     if peak is not None:
-        fits = [f"{cap} {lim:,} MB: {'fits' if peak <= lim else 'OVER'} ({peak / lim:.0%})" for cap, lim in LIMITS_MB.items()]
-        lines.append("- Measured peak against per-model limits: " + "; ".join(fits) + ".")
+        b = before if before is not None and pd.notna(before) else 0
+        fits = [f"{cap} {lim - b:,.0f} MB: {'fits' if peak <= lim - b else 'OVER'} ({peak / (lim - b):.0%})"
+                for cap, lim in LIMITS_MB.items()]
+        lines.append("- Measured peak against the command limit (SKU maximum minus the size before) of each SKU, "
+                     "if the model held the same data there: " + "; ".join(fits) + ". This assumes the peak, like "
+                     "'consumed memory' in the errors, does not include the model already in memory; not verified.")
     elif row["consumed_mb_from_error"] is not None:
         lines.append(f"- Engine cancelled at {fmt(row['consumed_mb_from_error'])} against a limit of "
                      f"{fmt(row['limit_mb_from_error'])} (database size before the command {fmt(row['db_size_before_mb'])}).")
@@ -978,6 +992,43 @@ RETURN
 """
 
 
+def size_tables(cap, dataset_id):
+    """Per-table VertiPaq bytes of what is in memory now. The service pages parts of an idle model out, and the
+    storage DMVs count only what is loaded: an idle v00 read 66 MB, the same model just after a refresh 93 MB."""
+    t = fabric.evaluate_dax(dataset=dataset_id, workspace=WORKSPACES[cap], dax_string=SIZE_DAX)
+    t.columns = [re.sub(r"^.*\[|\]$", "", str(c)) for c in t.columns]
+    for c in ("DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"):
+        t[c] = pd.to_numeric(t[c], errors="coerce").fillna(0)
+    t["TotalBytes"] = t[["DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"]].sum(axis=1)
+    return t
+
+
+def vertipaq_mb(cap, dataset_id):
+    try:
+        return round(float(size_tables(cap, dataset_id)["TotalBytes"].sum()) / 1048576, 1)
+    except Exception as e:
+        note(f"{cap}: size query failed: {str(e)[:200]}")
+        return None
+
+
+def dax_name(s):
+    return "'" + s.replace("'", "''") + "'"
+
+
+def warm_up(cap, dataset_id):
+    """Touch every column (DISTINCTCOUNT per column, one query per table) so the whole model is in memory."""
+    ws = WORKSPACES[cap]
+    cols = fabric.list_columns(dataset=dataset_id, workspace=ws)
+    cols = cols[~cols["Column Name"].astype(str).str.startswith("RowNumber")]
+    for table, g in cols.groupby("Table Name"):
+        args = ", ".join(f'"c{i}", DISTINCTCOUNT({dax_name(table)}[{c.replace("]", "]]")}])'
+                         for i, c in enumerate(g["Column Name"]))
+        try:
+            fabric.evaluate_dax(dataset=dataset_id, workspace=ws, dax_string=f"EVALUATE ROW({args})")
+        except Exception as e:
+            note(f"{cap}: warm-up of {table} failed: {str(e)[:200]}")
+
+
 def model_sizes(cap):
     ws = WORKSPACES[cap]
     models, tables = [], []
@@ -985,7 +1036,7 @@ def model_sizes(cap):
     for d in sorted(datasets, key=lambda d: d["name"]):
         name, did = d["name"], d["id"]
         row = {"capacity": cap, "workspace_id": ws, "model": name, "dataset_id": did, "data_tag": "",
-               "last_refresh": "", "total_mb": None, "data_mb": None, "dictionary_mb": None,
+               "last_refresh": "", "as_found_mb": None, "total_mb": None, "data_mb": None, "dictionary_mb": None,
                "hierarchy_mb": None, "relationship_mb": None, "error": ""}
         try:
             hist = pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{did}/refreshes?$top=1").json().get("value", [])
@@ -993,11 +1044,9 @@ def model_sizes(cap):
                 row["last_refresh"] = f"{hist[0].get('status')} {hist[0].get('endTime') or ''}".strip()
             params = pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{did}/parameters").json().get("value", [])
             row["data_tag"] = next((p.get("currentValue") for p in params if p.get("name") == "DataTag"), "")
-            t = fabric.evaluate_dax(dataset=did, workspace=ws, dax_string=SIZE_DAX)
-            t.columns = [re.sub(r"^.*\[|\]$", "", str(c)) for c in t.columns]
-            for c in ("DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"):
-                t[c] = pd.to_numeric(t[c], errors="coerce").fillna(0)
-            t["TotalBytes"] = t[["DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"]].sum(axis=1)
+            row["as_found_mb"] = round(float(size_tables(cap, did)["TotalBytes"].sum()) / 1048576, 1)
+            warm_up(cap, did)
+            t = size_tables(cap, did)   # after the warm-up: the whole model, comparable with DAX Studio on Desktop
             mb = lambda c: round(float(t[c].sum()) / 1048576, 1)
             row.update(total_mb=mb("TotalBytes"), data_mb=mb("DataBytes"), dictionary_mb=mb("DictionaryBytes"),
                        hierarchy_mb=mb("HierarchyBytes"), relationship_mb=mb("RelationshipBytes"))
@@ -1035,7 +1084,7 @@ try:
             per_model, per_table = model_sizes(cap)
             query_frames.setdefault("sizes", []).append(per_model)
             query_frames.setdefault("size-tables", []).append(per_table)
-            sections += [f"## {cap}", "", md_table(per_model[["model", "data_tag", "last_refresh", "total_mb",
+            sections += [f"## {cap}", "", md_table(per_model[["model", "data_tag", "last_refresh", "as_found_mb", "total_mb",
                                                               "data_mb", "dictionary_mb", "hierarchy_mb",
                                                               "relationship_mb", "error"]]), ""]
         target_list = []   # nothing else to do for this task
@@ -1073,12 +1122,25 @@ try:
 
     for cap in (target_list if task == "refresh" else []):
         head, dataset_id, tag, params = prepared[cap]
+        size_before = vertipaq_mb(cap, dataset_id)   # as it is in memory, without loading anything
+        note(f"{cap}: model size in memory before the refresh: {size_before} MB")
+        if clear_first.lower() == "true":
+            clr = refresh(cap, dataset_id, refresh_type="clearValues")
+            if clr["result"] != "refreshed":
+                raise HarnessStop(f"{cap}: clearValues refresh {clr['result']}: {clr['error_text'][:500]}")
+            time.sleep(30)   # keeps the clearValues events out of the full refresh's time window in the logs
+            size_before = vertipaq_mb(cap, dataset_id)
+            note(f"{cap}: model size after clearValues: {size_before} MB")
         if cap in TRACED:
             ref, logs = traced_refresh(cap, dataset_id)
         else:
             ref = refresh(cap, dataset_id)
             logs = read_logs(cap, dataset_id, ref)
         row = build_row(cap, head, tag, dataset_id, ref, logs)
+        row["clear_first"] = clear_first.lower()
+        row["size_before_mb"] = size_before
+        if size_before is not None and cap in LIMITS_MB:
+            row["command_limit_mb"] = round(LIMITS_MB[cap] - size_before, 0)
         if cap in TRACED and len(logs["metrics"]):
             row["metrics_source"] = "XMLA trace ExecutionMetrics"
         rows.append(row)
@@ -1088,7 +1150,7 @@ try:
             if len(logs.get(name, [])):
                 write_csv(f"{prefix}-{name}.csv", logs[name])
         spark.createDataFrame([spark_row(row)], ROW_SCHEMA) \
-            .write.format("delta").mode("append").save(RUNS_TABLE)   # append only, never overwrite
+            .write.format("delta").mode("append").option("mergeSchema", "true").save(RUNS_TABLE)   # append only
 
         sec = [f"## {cap}", "",
                f"- Result: **{row['result']}** {('(' + row['failure_kind'] + ')') if row['failure_kind'] else ''}",

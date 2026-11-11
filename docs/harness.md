@@ -51,6 +51,12 @@ If a check fails, the notebook writes a summary with the reason and ends as fail
 | `harness_run_id` | empty | Run folder name. Empty means generate one |
 | `max_refresh_minutes` | `120` | When to stop polling a refresh |
 | `max_log_wait_minutes` | `20` | When to stop waiting for the monitoring event |
+| `task` | `refresh` | `refresh`, `queries` (query workload) or `sizes` (VertiPaq size of every model in the target workspaces; driver: `run_variant.py all --task sizes --targets F64old,F2,PPU`) |
+| `clear_first` | `false` | Refresh task (`--clear-first`): run a `clearValues` refresh first, so the model is empty when the full refresh starts |
+
+Every refresh records `size_before_mb`, the model's VertiPaq size in memory just before the full refresh, and `command_limit_mb`, the SKU maximum minus that size. The command memory limit of a refresh is the SKU maximum minus what the model already uses (Chris Webb, "Power BI semantic model memory errors, part 3", 2024), which is what the resource governance errors report as "database size before command execution".
+
+The sizes task first reads what is in memory (`as_found_mb`), then touches every column with a DISTINCTCOUNT query and reads again (`total_mb`). The service pages parts of an idle model out and the storage statistics count only what is loaded: idle v00 read 66 MB, the same model after a refresh 93 MB, and DAX Studio on the model in Desktop 92.7 MB.
 
 ## How the refresh is matched in the logs
 
