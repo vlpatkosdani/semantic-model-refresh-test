@@ -181,6 +181,7 @@ Reading notes: the `Backup` step in the per-table files gives the committed mode
 
 | File | Shows |
 |---|---|
+| `f2-v20-pq-sort-resource-governance.png` | v20 on F2: consumed 3,179 MB, limit 3,067 MB, database size before command 4 MB |
 | `f2-v99-kitchen-sink-resource-governance.png` | v99 on F2: consumed 3,319 MB, limit 3,065 MB, database size before command 6 MB |
 | `f64-v99d-first-version-resource-governance.png` | v99d (first version, with staging buffers) on F64: consumed 25,598 MB, limit 25,593 MB |
 | `f64-v99h-staging-buffers-resource-governance.png` | v99h on F64: consumed 25,603 MB, limit 25,592 MB |
