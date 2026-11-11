@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REMOTE = "semantic-model-refresh"
 BRANCH = "main"
-WORKSPACES = {"F2": "58b05b2a-00d2-45df-9034-0a044bb3d162", "F64": "a1a434d3-4b0b-46d2-a4a2-147e3aff9e77"}
+WORKSPACES = {"F2": "58b05b2a-00d2-45df-9034-0a044bb3d162", "F64": "d3119fe5-cd57-4366-b671-89a3ad82aed5"}   # recreated 2026-11-11
 HARNESS_WS = WORKSPACES["F64"]
 NOTEBOOK = "refresh-harness"
 LAKEHOUSE = "harness_lake"

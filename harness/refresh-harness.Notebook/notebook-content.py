@@ -69,7 +69,8 @@ import notebookutils
 # Lab environment. IDs, not secrets.
 WORKSPACES = {
     "F2": "58b05b2a-00d2-45df-9034-0a044bb3d162",
-    "F64": "a1a434d3-4b0b-46d2-a4a2-147e3aff9e77",
+    # Recreated on 2026-11-11 after the first F64 workspace lost its Fabric items (old ID a1a434d3-...).
+    "F64": "d3119fe5-cd57-4366-b671-89a3ad82aed5",
     # Premium Per User, 100 GB per model. Not connected to Git and not a Fabric capacity, so it has no
     # workspace monitoring: the model is published from Desktop, and the refresh is measured with a trace.
     "PPU": "5f59a539-09dd-480f-a4ae-24f374b0e7aa",
@@ -88,13 +89,19 @@ _monitoring_db = {}
 
 def monitoring_db(cap):
     if cap not in _monitoring_db:
-        hits = [i for i in list_items(WORKSPACES[cap], "KQLDatabase") if "monitoring" in i["displayName"].lower()]
+        dbs = list_items(WORKSPACES[cap], "KQLDatabase")
+        # Prefer the old experience's database, which collects semantic model events; the new Monitoring item's
+        # database stayed empty on 2026-11-11 because its data collection could not be enabled.
+        hits = [i for i in dbs if i["displayName"] == "Monitoring KQL database"] or \
+               [i for i in dbs if "monitoring" in i["displayName"].lower()]
         if len(hits) != 1:
             raise HarnessStop(f"{cap}: expected one monitoring KQL database, found "
                               f"{[i['displayName'] for i in hits]}")
         _monitoring_db[cap] = hits[0]["id"]
         note(f"{cap}: monitoring database {hits[0]['displayName']}")
     return _monitoring_db[cap]
+
+
 REFRESH_PARALLELISM = 6   # what the manual service refreshes used, so results compare
 
 # Per-model refresh memory limits in MB. F2 is the measured limit from the error messages.
