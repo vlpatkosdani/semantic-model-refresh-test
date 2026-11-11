@@ -56,7 +56,7 @@ If a check fails, the notebook writes a summary with the reason and ends as fail
 
 Every refresh records `size_before_mb`, the model's VertiPaq size in memory just before the full refresh, and `command_limit_mb`, the SKU maximum minus that size. The command memory limit of a refresh is the SKU maximum minus what the model already uses (Chris Webb, "Power BI semantic model memory errors, part 3", 2024), which is what the resource governance errors report as "database size before command execution".
 
-The sizes task first reads what is in memory (`as_found_mb`), then touches every column with a DISTINCTCOUNT query and reads again (`total_mb`). The service pages parts of an idle model out and the storage statistics count only what is loaded: idle v00 read 66 MB, the same model after a refresh 93 MB, and DAX Studio on the model in Desktop 92.7 MB.
+The sizes task reads the storage statistics of every model as it is (data, dictionaries, hierarchies, relationships; VertiPaq Analyzer's Total Size). v00 on 1M read 93 MB right after a refresh and 66 MB a day later with the same data, the difference all in the dictionaries; touching every column first did not change the 66 MB. Each refresh therefore also records `size_after_mb`, the size right after it. DAX Studio on the model just refreshed in Desktop gave 92.7 MB.
 
 ## How the refresh is matched in the logs
 

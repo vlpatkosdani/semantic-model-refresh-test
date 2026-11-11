@@ -588,6 +588,7 @@ ROW_SCHEMA = StructType(
     # the refresh starts; size_before_mb is the model's VertiPaq size in memory just before the full refresh.
     + [StructField(c, DoubleType()) for c in ["size_before_mb", "command_limit_mb"]]
     + [StructField(c, StringType()) for c in ["clear_first"]]
+    + [StructField(c, DoubleType()) for c in ["size_after_mb"]]
 )
 COLUMNS = [f.name for f in ROW_SCHEMA.fields]
 
@@ -993,8 +994,9 @@ RETURN
 
 
 def size_tables(cap, dataset_id):
-    """Per-table VertiPaq bytes of what is in memory now. The service pages parts of an idle model out, and the
-    storage DMVs count only what is loaded: an idle v00 read 66 MB, the same model just after a refresh 93 MB."""
+    """Per-table VertiPaq bytes from the storage DMVs. v00 on 1M read 93 MB right after a refresh (2026-11-10) and
+    66 MB a day later, with the same data; touching every column did not change the 66 MB (2026-11-11). The
+    difference is in the dictionaries. Each refresh therefore records the size before and right after."""
     t = fabric.evaluate_dax(dataset=dataset_id, workspace=WORKSPACES[cap], dax_string=SIZE_DAX)
     t.columns = [re.sub(r"^.*\[|\]$", "", str(c)) for c in t.columns]
     for c in ("DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"):
@@ -1011,24 +1013,6 @@ def vertipaq_mb(cap, dataset_id):
         return None
 
 
-def dax_name(s):
-    return "'" + s.replace("'", "''") + "'"
-
-
-def warm_up(cap, dataset_id):
-    """Touch every column (DISTINCTCOUNT per column, one query per table) so the whole model is in memory."""
-    ws = WORKSPACES[cap]
-    cols = fabric.list_columns(dataset=dataset_id, workspace=ws)
-    cols = cols[~cols["Column Name"].astype(str).str.startswith("RowNumber")]
-    for table, g in cols.groupby("Table Name"):
-        args = ", ".join(f'"c{i}", DISTINCTCOUNT({dax_name(table)}[{c.replace("]", "]]")}])'
-                         for i, c in enumerate(g["Column Name"]))
-        try:
-            fabric.evaluate_dax(dataset=dataset_id, workspace=ws, dax_string=f"EVALUATE ROW({args})")
-        except Exception as e:
-            note(f"{cap}: warm-up of {table} failed: {str(e)[:200]}")
-
-
 def model_sizes(cap):
     ws = WORKSPACES[cap]
     models, tables = [], []
@@ -1036,7 +1020,7 @@ def model_sizes(cap):
     for d in sorted(datasets, key=lambda d: d["name"]):
         name, did = d["name"], d["id"]
         row = {"capacity": cap, "workspace_id": ws, "model": name, "dataset_id": did, "data_tag": "",
-               "last_refresh": "", "as_found_mb": None, "total_mb": None, "data_mb": None, "dictionary_mb": None,
+               "last_refresh": "", "total_mb": None, "data_mb": None, "dictionary_mb": None,
                "hierarchy_mb": None, "relationship_mb": None, "error": ""}
         try:
             hist = pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{did}/refreshes?$top=1").json().get("value", [])
@@ -1044,9 +1028,7 @@ def model_sizes(cap):
                 row["last_refresh"] = f"{hist[0].get('status')} {hist[0].get('endTime') or ''}".strip()
             params = pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{did}/parameters").json().get("value", [])
             row["data_tag"] = next((p.get("currentValue") for p in params if p.get("name") == "DataTag"), "")
-            row["as_found_mb"] = round(float(size_tables(cap, did)["TotalBytes"].sum()) / 1048576, 1)
-            warm_up(cap, did)
-            t = size_tables(cap, did)   # after the warm-up: the whole model, comparable with DAX Studio on Desktop
+            t = size_tables(cap, did)
             mb = lambda c: round(float(t[c].sum()) / 1048576, 1)
             row.update(total_mb=mb("TotalBytes"), data_mb=mb("DataBytes"), dictionary_mb=mb("DictionaryBytes"),
                        hierarchy_mb=mb("HierarchyBytes"), relationship_mb=mb("RelationshipBytes"))
@@ -1084,7 +1066,7 @@ try:
             per_model, per_table = model_sizes(cap)
             query_frames.setdefault("sizes", []).append(per_model)
             query_frames.setdefault("size-tables", []).append(per_table)
-            sections += [f"## {cap}", "", md_table(per_model[["model", "data_tag", "last_refresh", "as_found_mb", "total_mb",
+            sections += [f"## {cap}", "", md_table(per_model[["model", "data_tag", "last_refresh", "total_mb",
                                                               "data_mb", "dictionary_mb", "hierarchy_mb",
                                                               "relationship_mb", "error"]]), ""]
         target_list = []   # nothing else to do for this task
@@ -1138,6 +1120,9 @@ try:
             logs = read_logs(cap, dataset_id, ref)
         row = build_row(cap, head, tag, dataset_id, ref, logs)
         row["clear_first"] = clear_first.lower()
+        if ref["result"] == "refreshed":
+            row["size_after_mb"] = vertipaq_mb(cap, dataset_id)
+            note(f"{cap}: model size in memory right after the refresh: {row['size_after_mb']} MB")
         row["size_before_mb"] = size_before
         if size_before is not None and cap in LIMITS_MB:
             row["command_limit_mb"] = round(LIMITS_MB[cap] - size_before, 0)
