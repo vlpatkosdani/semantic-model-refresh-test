@@ -26,7 +26,7 @@ expected_commit = ""          # commit the driver pushed; empty means whatever t
 harness_run_id = ""           # set by the driver; empty means generate one
 max_refresh_minutes = "120"   # stop polling the refresh after this many minutes
 max_log_wait_minutes = "20"   # stop waiting for the monitoring event after this many minutes
-task = "refresh"              # refresh: full refresh cycle. queries: run the query workload
+task = "refresh"              # refresh: full refresh cycle. queries: run the query workload. sizes: VertiPaq size of every model
 queries_file = ""             # queries task: path under harness_lake Files/ with the variant's query JSON
 pages = "p01,p05,p10,p20"     # queries task: pages to render
 modes = "cold,warm"           # queries task: cold clears the cache before each repeat; warm renders once unmeasured first
@@ -74,8 +74,11 @@ WORKSPACES = {
     # Premium Per User, 100 GB per model. Not connected to Git and not a Fabric capacity, so it has no
     # workspace monitoring: the model is published from Desktop, and the refresh is measured with a trace.
     "PPU": "5f59a539-09dd-480f-a4ae-24f374b0e7aa",
+    # The first F64 workspace. Its Fabric items were lost on 2026-11-11, but its semantic models still hold
+    # the data of the earlier runs; used only by the sizes task.
+    "F64old": "a1a434d3-4b0b-46d2-a4a2-147e3aff9e77",
 }
-NO_GIT = {"PPU"}       # targets whose models are published by hand, not synced from Git
+NO_GIT = {"PPU", "F64old"}       # targets whose models are published by hand, not synced from Git
 TRACED = {"PPU"}       # targets measured with an XMLA trace instead of SemanticModelLogs
 HARNESS_WORKSPACE = WORKSPACES["F64"]   # where this notebook and harness_lake live
 LAKEHOUSE_NAME = "harness_lake"
@@ -953,6 +956,69 @@ def run_queries_task(cap, head, tag, dataset_id):
 
 # MARKDOWN ********************
 
+# ## Sizes task: VertiPaq size of every model in a workspace
+# The same storage statistics VertiPaq Analyzer (DAX Studio, View Metrics) reads: the segments of every
+# column, hierarchy and relationship, plus the column dictionaries. Its total is VertiPaq Analyzer's Total Size.
+
+# CELL ********************
+
+SIZE_DAX = """
+EVALUATE
+VAR Seg = SELECTCOLUMNS ( INFO.STORAGETABLECOLUMNSEGMENTS (), "T", [DIMENSION_NAME], "Id", [TABLE_ID], "Size", [USED_SIZE] )
+VAR Dict = SELECTCOLUMNS ( FILTER ( INFO.STORAGETABLECOLUMNS (), [COLUMN_TYPE] = "BASIC_DATA" ), "T", [DIMENSION_NAME], "Size", [DICTIONARY_SIZE] )
+VAR Tables = DISTINCT ( UNION ( SELECTCOLUMNS ( Seg, "T", [T] ), SELECTCOLUMNS ( Dict, "T", [T] ) ) )
+RETURN
+    ADDCOLUMNS (
+        Tables,
+        "DataBytes", SUMX ( FILTER ( Seg, [T] = EARLIER ( [T] ) && NOT ( LEFT ( [Id], 2 ) IN { "H$", "U$", "R$" } ) ), [Size] ),
+        "HierarchyBytes", SUMX ( FILTER ( Seg, [T] = EARLIER ( [T] ) && LEFT ( [Id], 2 ) IN { "H$", "U$" } ), [Size] ),
+        "RelationshipBytes", SUMX ( FILTER ( Seg, [T] = EARLIER ( [T] ) && LEFT ( [Id], 2 ) = "R$" ), [Size] ),
+        "DictionaryBytes", SUMX ( FILTER ( Dict, [T] = EARLIER ( [T] ) ), [Size] )
+    )
+"""
+
+
+def model_sizes(cap):
+    ws = WORKSPACES[cap]
+    models, tables = [], []
+    datasets = ok(pbi.get(f"v1.0/myorg/groups/{ws}/datasets"), f"{cap}: list datasets").json()["value"]
+    for d in sorted(datasets, key=lambda d: d["name"]):
+        name, did = d["name"], d["id"]
+        row = {"capacity": cap, "workspace_id": ws, "model": name, "dataset_id": did, "data_tag": "",
+               "last_refresh": "", "total_mb": None, "data_mb": None, "dictionary_mb": None,
+               "hierarchy_mb": None, "relationship_mb": None, "error": ""}
+        try:
+            hist = pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{did}/refreshes?$top=1").json().get("value", [])
+            if hist:
+                row["last_refresh"] = f"{hist[0].get('status')} {hist[0].get('endTime') or ''}".strip()
+            params = pbi.get(f"v1.0/myorg/groups/{ws}/datasets/{did}/parameters").json().get("value", [])
+            row["data_tag"] = next((p.get("currentValue") for p in params if p.get("name") == "DataTag"), "")
+            t = fabric.evaluate_dax(dataset=did, workspace=ws, dax_string=SIZE_DAX)
+            t.columns = [re.sub(r"^.*\[|\]$", "", str(c)) for c in t.columns]
+            for c in ("DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"):
+                t[c] = pd.to_numeric(t[c], errors="coerce").fillna(0)
+            t["TotalBytes"] = t[["DataBytes", "HierarchyBytes", "RelationshipBytes", "DictionaryBytes"]].sum(axis=1)
+            mb = lambda c: round(float(t[c].sum()) / 1048576, 1)
+            row.update(total_mb=mb("TotalBytes"), data_mb=mb("DataBytes"), dictionary_mb=mb("DictionaryBytes"),
+                       hierarchy_mb=mb("HierarchyBytes"), relationship_mb=mb("RelationshipBytes"))
+            t.insert(0, "model", name)
+            t.insert(0, "capacity", cap)
+            tables.append(t)
+        except Exception as e:
+            row["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        note(f"{cap}: {name}: {row['total_mb']} MB {row['error'][:120]}")
+        models.append(row)
+    return pd.DataFrame(models), (pd.concat(tables, ignore_index=True) if tables else pd.DataFrame())
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
 # ## Run
 
 # CELL ********************
@@ -960,8 +1026,19 @@ def run_queries_task(cap, head, tag, dataset_id):
 rows, sections, stop_reason = [], [], None
 query_frames = {"queries": [], "pages": [], "summary": []}
 try:
-    if task not in ("refresh", "queries"):
+    if task not in ("refresh", "queries", "sizes"):
         raise HarnessStop(f"unknown task {task}")
+    if task == "sizes":
+        for cap in target_list:
+            if cap not in WORKSPACES:
+                raise HarnessStop(f"unknown target {cap}; known: {', '.join(WORKSPACES)}")
+            per_model, per_table = model_sizes(cap)
+            query_frames.setdefault("sizes", []).append(per_model)
+            query_frames.setdefault("size-tables", []).append(per_table)
+            sections += [f"## {cap}", "", md_table(per_model[["model", "data_tag", "last_refresh", "total_mb",
+                                                              "data_mb", "dictionary_mb", "hierarchy_mb",
+                                                              "relationship_mb", "error"]]), ""]
+        target_list = []   # nothing else to do for this task
     if task == "queries" and not queries_file:
         raise HarnessStop("task queries needs queries_file")
     prepared = {}

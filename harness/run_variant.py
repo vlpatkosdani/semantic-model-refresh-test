@@ -302,7 +302,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("variant")
     ap.add_argument("--targets", default="F64", help="comma separated, run in this order: F2,F64")
-    ap.add_argument("--task", choices=["refresh", "queries"], default="refresh")
+    ap.add_argument("--task", choices=["refresh", "queries", "sizes"], default="refresh",
+                    help="sizes: VertiPaq size of every model in the target workspaces (variant: all)")
     ap.add_argument("--pages", default="p01,p05,p10,p20", help="queries task")
     ap.add_argument("--modes", default="cold,warm", help="queries task")
     ap.add_argument("--concurrency", default="seq,page", help="queries task")
@@ -328,10 +329,12 @@ def main():
             print(summary.read_text(encoding="utf-8"))
         return
     targets = [t.strip() for t in args.targets.split(",") if t.strip()]
-    if not (ROOT / "models" / args.variant).is_dir():
+    if args.task == "sizes":
+        args.variant = "all"
+    elif not (ROOT / "models" / args.variant).is_dir():
         sys.exit(f"models/{args.variant} does not exist")
 
-    data_tag = committed_data_tag(args.variant)
+    data_tag = "" if args.task == "sizes" else committed_data_tag(args.variant)
     commit = check_pushed()
     print(f"{args.variant}: DataTag {data_tag} at {commit[:7]}, targets {', '.join(targets)}")
     if args.task == "refresh":
