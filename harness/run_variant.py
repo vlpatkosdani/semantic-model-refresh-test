@@ -250,6 +250,13 @@ def append_csv(target, text, job_id):
     if target.exists():
         with target.open(newline="", encoding="utf-8") as f:
             header = next(csv.reader(f), [])
+        if header != fields and set(fields) <= set(header):
+            # Fewer columns, e.g. queries on F2 have no server columns (no monitoring): leave those empty.
+            with target.open("a", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=header)
+                for r in new_rows:
+                    w.writerow({"job_instance_id": job_id, **r})
+            return len(new_rows)
         if header != fields:
             if fields[:len(header)] != header:
                 sys.exit(f"{target} has different columns. Not touching it; the rows are in the run folder.")

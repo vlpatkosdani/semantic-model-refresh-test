@@ -81,3 +81,24 @@ What this shows:
 - `# Orders` with `FILTER` over `VALUES ( Sales[Order Number] )` costs seconds and hundreds of MB, less than `Margin`.
 
 All 792 queries succeeded. Workspace monitoring stored no `ExecutionMetrics` event for 195 of them, still missing 40 minutes after the run, so the peak column is the largest of the queries that have one. Every visual has at least one measured peak. The v00 and v27 runs had metrics for every query.
+
+### Query workload on F2, 1M
+
+Harness runs on 2026-11-11: refresh `20261111T202238Z-v26-237b` (refreshed in 1 min), queries `20261111T202553Z-v26-d062`: pages p05 and p20, cold cache, all visuals at once, 3 repeats. F2 has no workspace monitoring, so only the client side is measured.
+
+Four visuals fail on F2 with:
+
+> Resource Governance: This query uses more memory than the configured limit. [...] More details: consumed memory 1024 MB, memory limit 1024 MB.
+
+| Visual | Peak per query on F64 | F2 |
+|---|---|---|
+| v15 `Margin %` matrix | 2,655 MB | fails, query memory limit |
+| v05 table with `Margin` and `# Orders` | 1,544 MB | fails |
+| v12 `Margin %` by quarter | 1,513 MB | fails |
+| v08 `Margin %` card | 1,276 MB | fails |
+| v10, v19 `Margin` charts | 926 MB | succeed, 10 to 11 s at the client |
+| all others | 131 MB or less | succeed |
+
+Every visual whose query needed more than 1,024 MB on F64 failed on F2, and every one below that succeeded. The same pages on v00-baseline on F2 (run `20261111T201823Z-v00-e337`) had no memory errors. On both models the matrices v01 and v20 are reported as failed only because the REST API cannot return their two result sets; without monitoring on F2 the harness cannot confirm that the server completed them.
+
+So on F2 a single visual fails at 1 GB of query memory, while a refresh may use about 3 GB. Bad DAX in a measure can make a report unusable on a small capacity even though the model refreshes without a problem.
