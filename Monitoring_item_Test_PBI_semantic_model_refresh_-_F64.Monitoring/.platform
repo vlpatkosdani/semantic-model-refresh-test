@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Monitoring",
+    "displayName": "Monitoring_item_Test_PBI_semantic_model_refresh_-_F64"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5d5c5147-3ada-90f3-4c03-2a8124347260"
+  }
+}
