@@ -96,7 +96,7 @@ Everything runs as Dani. No service principal, no secrets in the repo.
 |---|---|
 | Git status and Update from Git | Contributor or higher on both workspaces, and access to the GitHub connection |
 | Read parameters, enhanced refresh | Write permission on the semantic models (owner or workspace member) |
-| `SemanticModelLogs` | Viewer on the F64 workspace (the Monitoring KQL database) |
+| `SemanticModelLogs` | Viewer on the F64 workspace (the workspace monitoring KQL database; the notebook finds it by "monitoring" in its name) |
 | Write to `harness_lake`, run the notebook | Contributor on the F64 workspace |
 | Driver | The same user signed in with `az login` |
 

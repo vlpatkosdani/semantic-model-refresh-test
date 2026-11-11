@@ -1,6 +1,6 @@
 // Query performance analysis for the semantic model refresh lab.
 //
-// For Fabric workspace monitoring: SemanticModelLogs in the Monitoring KQL database of the F64
+// For Fabric workspace monitoring: SemanticModelLogs in the workspace monitoring KQL database of the F64
 // lab workspace. Paste into a KQL queryset, put the cursor in one query and press Run.
 //
 // The harness query runner (task "queries", see docs/harness.md) starts every query with an unused

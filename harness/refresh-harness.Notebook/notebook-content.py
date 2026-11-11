@@ -80,14 +80,20 @@ HARNESS_WORKSPACE = WORKSPACES["F64"]   # where this notebook and harness_lake l
 LAKEHOUSE_NAME = "harness_lake"
 # Targets with workspace monitoring. The KQL database is looked up by name at run time, because turning
 # monitoring off and on (or a capacity change) recreates it with a new ID.
+# The old experience named it "Monitoring KQL database"; the new one (Monitoring item, 2026-11-11) names it
+# "<workspace>_Monitoring_item_<workspace>_Database". Both have the same SemanticModelLogs table.
 MONITORED = {"F64"}
-MONITORING_DB_NAME = "Monitoring KQL database"
 _monitoring_db = {}
 
 
 def monitoring_db(cap):
     if cap not in _monitoring_db:
-        _monitoring_db[cap] = find_item(WORKSPACES[cap], "KQLDatabase", MONITORING_DB_NAME)
+        hits = [i for i in list_items(WORKSPACES[cap], "KQLDatabase") if "monitoring" in i["displayName"].lower()]
+        if len(hits) != 1:
+            raise HarnessStop(f"{cap}: expected one monitoring KQL database, found "
+                              f"{[i['displayName'] for i in hits]}")
+        _monitoring_db[cap] = hits[0]["id"]
+        note(f"{cap}: monitoring database {hits[0]['displayName']}")
     return _monitoring_db[cap]
 REFRESH_PARALLELISM = 6   # what the manual service refreshes used, so results compare
 

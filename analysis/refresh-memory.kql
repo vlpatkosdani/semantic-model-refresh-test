@@ -1,7 +1,7 @@
 // Refresh memory analysis for the semantic model refresh lab.
 //
 // For Fabric workspace monitoring: the SemanticModelLogs table in the
-// "Monitoring KQL database" of the F64 lab workspace. The F2 workspace has no
+// workspace monitoring KQL database of the F64 lab workspace (since 2026-11-11 the one under the Monitoring item, named "..._Monitoring_item_..._Database"). The F2 workspace has no
 // monitoring (F2 cannot carry the monitoring Eventhouse), so its results come
 // from the error messages and are recorded by hand in the model READMEs.
 //
@@ -9,7 +9,7 @@
 // each model. In all runs so far, a peak above the F2 limit (about 3,066 MB)
 // has meant a failure on F2, and a peak below it a successful refresh.
 //
-// Paste this file into a KQL queryset connected to the Monitoring KQL database,
+// Paste this file into a KQL queryset connected to that database,
 // put the cursor in one query and press Run. Each query stands on its own and
 // needs no input.
 //
