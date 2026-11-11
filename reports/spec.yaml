@@ -253,3 +253,41 @@ variants:
         title: Orders filtered
         visuals: [t01, t02, o01, o02, o03, o04]
   v24b-second-fact-bidirectional: *second_fact
+
+  # v25: a many-to-many relationship from Sales to Customer Segment, one row per customer and
+  # year, joined on CustomerKey only. Page pm filters by a segment through that relationship.
+  v25-many-to-many:
+    visuals:
+      - id: m01
+        type: slicer
+        title: Segment
+        values: ["Customer Segment[Segment]"]
+        selected: ["Gold"]
+      - id: n01
+        type: card
+        title: Sales amount
+        values: ["Sales[Sales Amount]"]
+      - id: n02
+        type: clusteredColumnChart
+        title: Sales by year
+        category: ["Date[Year]"]
+        values: ["Sales[Sales Amount]"]
+      - id: n03
+        type: clusteredBarChart
+        title: Sales by country
+        category: ["Customer[Country]"]
+        values: ["Sales[Sales Amount]"]
+      - id: n04
+        type: tableEx
+        title: Categories
+        values: ["Product[Category]", "Sales[Sales Amount]", "Sales[# Orders]"]
+      - id: n05
+        type: pivotTable
+        title: Segment by year
+        rows: ["Customer Segment[Segment]"]
+        columns: ["Date[Year]"]
+        values: ["Sales[Sales Amount]"]
+    pages:
+      - name: pm
+        title: Segment filtered
+        visuals: [m01, n01, n02, n03, n04, n05]
