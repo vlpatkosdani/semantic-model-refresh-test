@@ -78,7 +78,17 @@ NO_GIT = {"PPU"}       # targets whose models are published by hand, not synced 
 TRACED = {"PPU"}       # targets measured with an XMLA trace instead of SemanticModelLogs
 HARNESS_WORKSPACE = WORKSPACES["F64"]   # where this notebook and harness_lake live
 LAKEHOUSE_NAME = "harness_lake"
-MONITORED = {"F64": "82e1f4b3-28ac-4c62-a7bd-6d6846b2032e"}   # capacity -> Monitoring KQL database ID
+# Targets with workspace monitoring. The KQL database is looked up by name at run time, because turning
+# monitoring off and on (or a capacity change) recreates it with a new ID.
+MONITORED = {"F64"}
+MONITORING_DB_NAME = "Monitoring KQL database"
+_monitoring_db = {}
+
+
+def monitoring_db(cap):
+    if cap not in _monitoring_db:
+        _monitoring_db[cap] = find_item(WORKSPACES[cap], "KQLDatabase", MONITORING_DB_NAME)
+    return _monitoring_db[cap]
 REFRESH_PARALLELISM = 6   # what the manual service refreshes used, so results compare
 
 # Per-model refresh memory limits in MB. F2 is the measured limit from the error messages.
@@ -327,7 +337,7 @@ def refresh(cap, dataset_id):
 # CELL ********************
 
 def kql(cap, query):
-    return labs.query_kusto(query=query, kql_database=MONITORED[cap], workspace=WORKSPACES[cap])
+    return labs.query_kusto(query=query, kql_database=monitoring_db(cap), workspace=WORKSPACES[cap])
 
 
 def kdt(s):
