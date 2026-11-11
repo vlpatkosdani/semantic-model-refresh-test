@@ -17,7 +17,12 @@ These columns are text in the model (Power Query `type text`, TMDL `dataType: st
 
 Three columns stay numeric: `Sales[Quantity]`, `Sales[Net Price]` and `Sales[Unit Cost]`. The measures aggregate them, and `SUM` over a text column is an error, so making them text would also mean rewriting the measures. The measures are unchanged.
 
-The relationships now join text to text, including the Date relationship. The Date table is no longer marked as a date table, because a date table needs a date key. The sort-by columns are text, so `Month` sorts by "1", "10", "11", "12", "2" and so on, a visible error a user would notice.
+The relationships now join text to text, including the Date relationship. The Date table is no longer marked as a date table, because a date table needs a date key.
+
+Two further changes keep the Date table usable, as a model author would have to:
+
+- The number columns the month, weekday, quarter and year-month labels were sorted by are text now, which would sort "1", "10", "11", "12", "2". Four hidden whole-number columns, `Year Quarter Sort`, `Year Month Sort`, `Month Sort` and `Day of Week Sort`, are added in Power Query after the type step, and the labels sort by them. The text number columns stay in the model.
+- `End of Month` was computed from `[Date]` after the type step, which fails once `[Date]` is text. It is now computed before the type step and converted to text with the other columns.
 
 ## Why this run
 
