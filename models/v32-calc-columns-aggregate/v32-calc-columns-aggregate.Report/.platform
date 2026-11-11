@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v32-calc-columns-aggregate"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "262a59d9-049e-4ff6-921d-4dbb10df7a66"
+  }
+}

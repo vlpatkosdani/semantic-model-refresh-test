@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v31-calc-columns-row-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "b73a9d28-503f-5bfb-a68f-9dc6b24b1c8a"
+  }
+}

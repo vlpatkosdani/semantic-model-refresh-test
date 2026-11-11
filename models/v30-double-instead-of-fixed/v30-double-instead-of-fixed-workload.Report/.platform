@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v30-double-instead-of-fixed-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "4306437e-45fc-59b5-b028-232ea5c0e20e"
+  }
+}

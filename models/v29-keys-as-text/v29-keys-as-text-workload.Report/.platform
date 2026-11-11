@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v29-keys-as-text-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e8ae1d2b-4f5f-54ec-8a2d-0e55dcaf1cf3"
+  }
+}
