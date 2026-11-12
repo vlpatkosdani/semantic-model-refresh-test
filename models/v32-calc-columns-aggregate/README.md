@@ -55,4 +55,21 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T110213Z-v32-ae1e`, que
 
 - Model: about 3 times the baseline (220.7 MB backup size, 367.9 MB in memory), the same as v31 with two fewer columns.
 - Refresh: the peak (631 MB) is inside the baseline range, and the Power Query peak (595 MB) is at the top of it. CPU doubles (121 s) and the refresh takes 1.1 min. The aggregating columns cost time, not peak memory. The slowest single column is `Sales[Line Share Of Customer]` at 3.8 s.
-- Queries: inconclusive. Two runs (11:07 and 12:33 UTC) were about twice as slow as the baseline on p05 and p20 (p20 slowest visual 1,486 and 1,516 ms, CPU 3,613 and 3,739 ms). A control run of v00-baseline at 14:24 UTC on the same day was just as slow (1,424 ms, CPU 3,673 ms), so the capacity was slower that day, not the model. Query times from different times of day cannot be compared here; an interleaved run of v00 and v32 is needed. The peak per query (55 MB) is the same as the baseline.
+- Queries: inconclusive. Two runs (11:07 and 12:33 UTC) were about twice as slow as the baseline on p05 and p20 (p20 slowest visual 1,486 and 1,516 ms, CPU 3,613 and 3,739 ms). A control run of v00-baseline at 14:24 UTC on the same day was just as slow (1,424 ms, CPU 3,673 ms), so the capacity was slower that day, not the model. Query times from different times of day cannot be compared here. The interleaved runs below show no difference from the baseline. The peak per query (55 MB) is the same as the baseline.
+
+### Interleaved query runs, F64, 1M, 2026-11-12
+
+v00-baseline, v32 and v34 back to back, twice, between 14:42 and 15:48 UTC (round 2 started 15:28, after a network drop): pages p05 and p20, cold cache, all visuals of the page at once, medians over 5 repeats. All 750 queries succeeded.
+
+| Round | Model | p05 slowest visual | p05 CPU | p20 slowest visual | p20 CPU | p20 peak per query |
+|---|---|---|---|---|---|---|
+| 1 | v00-baseline | 266 ms | 515 ms | 1,516 ms | 3,736 ms | 55 MB |
+| 1 | v32-calc-columns-aggregate | 282 ms | 547 ms | 1,454 ms | 3,643 ms | 55 MB |
+| 1 | v34-auto-date-time-no-date-table | 281 ms | 485 ms | 1,470 ms | 3,627 ms | 55 MB |
+| 2 | v00-baseline | 281 ms | 516 ms | 1,563 ms | 3,535 ms | 55 MB |
+| 2 | v32-calc-columns-aggregate | 281 ms | 516 ms | 1,580 ms | 3,831 ms | 55 MB |
+| 2 | v34-auto-date-time-no-date-table | 282 ms | 530 ms | 1,407 ms | 3,299 ms | 55 MB |
+
+Runs: v00 `20261112T144321Z-v00-7624`, `20261112T152844Z-v00-eda9`; v32 `20261112T145014Z-v32-e5da`, `20261112T153443Z-v32-c8ba`; v34 `20261112T145703Z-v34-b6c0`, `20261112T154139Z-v34-c119`.
+
+Run back to back, the three models give the same query times, CPU and memory, within about 10 % between rounds. Neither the 30 aggregating calculated columns nor Auto date/time without a marked date table changes the cost of the report's queries.

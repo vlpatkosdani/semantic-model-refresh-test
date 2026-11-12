@@ -55,4 +55,21 @@ F64, 1M, 2026-11-12. Refresh run `20261112T134438Z-v34-9a21`, query run `2026111
 
 - Model: the two extra local date tables add 0.7 MB in memory over v33. With the fact date columns related to the Date table, Auto date/time costs a few MB whether the Date table is marked or not.
 - Refresh: the peak is 9 MB above the baseline range, and CPU (99 s) is high. A v00-baseline refresh 20 minutes later also used 99 s of CPU, so the CPU says more about the capacity at that time than about the model.
-- Queries: p20 slowest visual 1,486 ms, CPU 3,346 ms. A control run of v00-baseline 35 minutes later was just as slow (1,424 ms, CPU 3,673 ms), so the capacity was slower at that time and these times cannot be compared with the earlier runs. An interleaved run with v00 is needed. The peak per query is the same as the baseline.
+- Queries: p20 slowest visual 1,486 ms, CPU 3,346 ms. A control run of v00-baseline 35 minutes later was just as slow (1,424 ms, CPU 3,673 ms), so the capacity was slower at that time and these times cannot be compared with the earlier runs. The interleaved runs below show no difference from the baseline. The peak per query is the same as the baseline.
+
+### Interleaved query runs, F64, 1M, 2026-11-12
+
+v00-baseline, v32 and v34 back to back, twice, between 14:42 and 15:48 UTC (round 2 started 15:28, after a network drop): pages p05 and p20, cold cache, all visuals of the page at once, medians over 5 repeats. All 750 queries succeeded.
+
+| Round | Model | p05 slowest visual | p05 CPU | p20 slowest visual | p20 CPU | p20 peak per query |
+|---|---|---|---|---|---|---|
+| 1 | v00-baseline | 266 ms | 515 ms | 1,516 ms | 3,736 ms | 55 MB |
+| 1 | v32-calc-columns-aggregate | 282 ms | 547 ms | 1,454 ms | 3,643 ms | 55 MB |
+| 1 | v34-auto-date-time-no-date-table | 281 ms | 485 ms | 1,470 ms | 3,627 ms | 55 MB |
+| 2 | v00-baseline | 281 ms | 516 ms | 1,563 ms | 3,535 ms | 55 MB |
+| 2 | v32-calc-columns-aggregate | 281 ms | 516 ms | 1,580 ms | 3,831 ms | 55 MB |
+| 2 | v34-auto-date-time-no-date-table | 282 ms | 530 ms | 1,407 ms | 3,299 ms | 55 MB |
+
+Runs: v00 `20261112T144321Z-v00-7624`, `20261112T152844Z-v00-eda9`; v32 `20261112T145014Z-v32-e5da`, `20261112T153443Z-v32-c8ba`; v34 `20261112T145703Z-v34-b6c0`, `20261112T154139Z-v34-c119`.
+
+Run back to back, the three models give the same query times, CPU and memory, within about 10 % between rounds. Neither the 30 aggregating calculated columns nor Auto date/time without a marked date table changes the cost of the report's queries.
