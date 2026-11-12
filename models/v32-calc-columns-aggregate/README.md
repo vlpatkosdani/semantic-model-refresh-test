@@ -55,4 +55,4 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T110213Z-v32-ae1e`, que
 
 - Model: about 3 times the baseline (220.7 MB backup size, 367.9 MB in memory), the same as v31 with two fewer columns.
 - Refresh: the peak (631 MB) is inside the baseline range, and the Power Query peak (595 MB) is at the top of it. CPU doubles (121 s) and the refresh takes 1.1 min. The aggregating columns cost time, not peak memory. The slowest single column is `Sales[Line Share Of Customer]` at 3.8 s.
-- Queries: about twice as slow as the baseline on p05 and p20, with CPU about 1.7 times. The visuals do not use the new columns, so this was not expected. One run; a repeat is planned before it counts.
+- Queries: about twice as slow as the baseline on p05 and p20, with CPU about 1.7 times. The visuals do not use the new columns, so this was not expected. A repeat (run `20261112T123353Z-v32-4e1f`) gave the same: p20 slowest visual 1,516 ms, CPU 3,739 ms; p05 297 ms, CPU 563 ms. Two runs agree, so the slowdown is real, though the reason is not known yet.

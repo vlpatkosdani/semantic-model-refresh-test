@@ -51,6 +51,8 @@ None. This is the control. It sets the reference numbers for model size, peak re
 | F64 | 1M | refreshed (2026-11-11, harness, model loaded: 92.7 MB in memory before) | 545 | 374 | 1 min | 73 MB |
 | F64 | 1M | refreshed (2026-11-11, harness, clearValues first: 0 MB before) | 608 | 335 | 1 min | 73 MB |
 | F2 | 1M | refreshed (2026-11-11, harness, 10M data still loaded: 626 MB before) | | | 1 min | 93 MB (DAX) |
+| F64 | 10M | refreshed (2026-11-12, harness, 66.2 MB in memory before) | 1,979 | 1,391 | 10 min | 778 MB |
+| F2 | 10M | refreshed (2026-11-12, harness, 66.2 MB in memory before) | | | 12 min | 700 MB (DAX) |
 
 Model size is the backup size in the refresh log, in MB of 1,048,576 bytes. On 1M the model is 73 MB, a bit above the 40 to 60 MB expected. On 10M the peak stays below the 3 GB limit of F2 (2,040 and 2,116 MB in two runs), and the harness run on 2026-11-10 confirmed it: the clean star schema with 23.7M sales rows refreshed on F2. It took 26 minutes there, against 6 minutes on F64.
 
@@ -63,3 +65,31 @@ Clearing the model first (`clearValues`, then the full refresh) made no measurab
 The refresh on F2 on 2026-11-11 started with the 10M data still in memory (626 MB). Its command memory limit was therefore 3,066 - 626 = 2,440 MB rather than about 3 GB. The 1M refresh needs far less and went through.
 
 The VertiPaq size in memory was 92.7 MB right after each refresh, the same as DAX Studio on the model in Desktop (97,198,262 bytes). The same model read 66.2 MB a day after its refresh, when the service had reloaded it from storage; the difference is all in the dictionaries.
+
+### Queries on 10M, 2026-11-12
+
+The query workload on 10M, to see how much memory a single query needs and whether the heaviest one fits under the 1,024 MB per-query limit of F2.
+
+F64, run `20261112T130128Z-v00-0dc7`, all 792 queries succeeded. Medians over 5 repeats, cold cache, all visuals of the page at once, against the 1M runs:
+
+| Page | Slowest visual 1M | Slowest visual 10M | CPU 1M | CPU 10M | Peak per query 1M | Peak per query 10M |
+|---|---|---|---|---|---|---|
+| p01 | 16 to 31 ms | 63 ms | 31 ms | 547 ms | 4 MB | 14 MB |
+| p05 | 125 to 141 ms | 3,737 ms | 313 to 328 ms | 18,125 ms | 14 MB | 415 MB |
+| p20 | 672 to 719 ms | 18,545 ms | 1,890 to 2,172 ms | 102,611 ms | 58 MB | 861 MB |
+
+Ten times the rows makes the slowest visual on p05 and p20 about 26 times slower and their CPU about 50 times higher. The heaviest single queries on p20:
+
+| Visual | Type | Peak per query | Slowest run | CPU |
+|---|---|---|---|---|
+| v20 | matrix | 861 MB | 18,545 ms | 69,953 ms |
+| v18 | table | 413 MB | 5,864 ms | 11,766 ms |
+| v05 | table | 411 MB | 3,955 ms | 9,578 ms |
+| v14 | bar chart | 108 MB | 2,300 ms | 7,281 ms |
+
+The matrix v20 needs 861 MB, under the 1,024 MB per query of F2 but close to it.
+
+F2, run `20261112T133725Z-v00-4050`, pages p05 and p20, cold cache, all visuals at once, 3 repeats. F2 has no workspace monitoring, so these are times at the client from the REST API (`executeQueries`) only, with no server time, CPU or memory. 66 of 75 queries succeeded and none failed on memory. The page p20 took 22.3 s (median), against 19.1 s on F64; the matrix v20 was the slowest visual at 22.2 s.
+
+The 9 failures are the visuals v01 on p05 and p20 and v20 on p20, with `DaxResultsetCountNotSupported`: the REST API returns one result set, and these visuals return more than one. The same 9 failed on 1M. v20 ran for about 22 s on F2 before the error came back, which suggests the query completed within the memory limit, but the API does not show that. A query through XMLA on F2 would.
+
