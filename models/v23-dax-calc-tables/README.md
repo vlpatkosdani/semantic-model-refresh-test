@@ -70,3 +70,21 @@ Query workload (run `20261110T132552Z-v23-ac2c`, all 792 queries succeeded), com
 | p20 | 672 ms | 672 ms | 2,033 ms | 2,001 ms | 58 MB | 58 MB |
 
 The calculated tables cost memory at refresh and in the model, but nothing measurable at query time for visuals that do not use them: the baseline's queries ran as fast as on v00.
+
+### Harness runs, F64, 10M, 2026-11-12: does the model already in memory count?
+
+Three full refreshes of the same model in a row, with the model size in memory measured before each one (INFO.STORAGETABLECOLUMNSEGMENTS plus dictionaries, by DAX):
+
+| Run | Harness run | Model in memory before | Peak MB | Power Query MB | Duration | Model after |
+|---|---|---|---|---|---|---|
+| from empty | `20261112T114059Z-v23-16be` | 0 MB | 13,064 | 1,708 | 8 min | 1,379 MB |
+| model loaded, right after the first | `20261112T115659Z-v23-fb5a` | 1,379 MB | 13,139 | 1,707 | 8 min | 1,381 MB |
+| loaded, then cleared first (`clearValues`) | `20261112T121228Z-v23-dfc6` | 1,381 MB, 0.1 MB after clearing | 13,062 | 1,870 | 7 min | 1,387 MB |
+
+The peak is the same in all three runs (13,062 to 13,139 MB, and 13,062 MB in the first 10M run on 2026-11-10). With 1,379 MB already loaded, the peak rose by 75 MB, not by 1,379 MB. So the peak in ExecutionMetrics does not include the copy of the model that stays in memory during a full refresh, and the second refresh did not need more than the first. Run 3 in the list above expected it would.
+
+That matches the command memory limit as Chris Webb describes it: the limit for a refresh is the SKU maximum minus the size of the model before the command. The peak counts what the refresh itself uses, and the model already in memory is taken off the limit instead. For this model on F64 that is 25,600 MB minus 1,379 MB, 24,221 MB, against a peak of about 13,100 MB.
+
+Clearing the model first did not lower the peak. It only raises the limit by the size of the model, here by 1,379 MB, at the cost of the model being empty while the refresh runs. On a SKU where the peak is just over the limit, that can be the difference; on F64 it does not matter for this model.
+
+The model size here is measured by DAX in the service. The backup size in the refresh log on 2026-11-10 was 1,833 MB for the same model, so the two sources differ.

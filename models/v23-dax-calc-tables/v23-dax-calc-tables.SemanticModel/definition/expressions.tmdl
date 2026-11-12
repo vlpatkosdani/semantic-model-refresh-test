@@ -1,5 +1,5 @@
 /// Release tag of the data to load: data-1m-v1 or data-10m-v1
-expression DataTag = "data-10m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-1m-v1", Type="Text", IsParameterQueryRequired=true]
+expression DataTag = "data-1m-v1" meta [IsParameterQuery=true, List={"data-1m-v1", "data-10m-v1"}, DefaultValue="data-1m-v1", Type="Text", IsParameterQueryRequired=true]
 	lineageTag: 51a5e502-ea90-4d89-b63e-71f40e319111
 
 	annotation PBI_ResultType = Text

@@ -41,4 +41,22 @@ Two further changes keep the Date table usable, as a model author would have to:
 
 ## Results
 
-Not run yet.
+F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261111T204204Z-v28-3f3b`, query run `20261111T204652Z-v28-3d3d` (all 792 queries succeeded). Query numbers are medians over 5 repeats, cold cache, all visuals of the page at once. The v00 column is the range over its six refreshes and three query runs on F64 with 1M.
+
+| | v00-baseline | v28-types-all-text |
+|---|---|---|
+| Refresh peak | 543 to 698 MB | 777 MB |
+| Power Query peak | 270 to 599 MB | 629 MB |
+| Duration | 0.6 to 0.8 min | 0.9 min |
+| CPU | 55 to 71 s | 108 s |
+| Model, backup size in the refresh log | 72.7 MB | 69.1 MB |
+| Model in memory right after the refresh | 92.7 MB | 171.5 MB |
+| p05 cold, slowest visual | 125 to 141 ms | 250 ms |
+| p05 cold, CPU | 313 to 328 ms | 469 ms |
+| p20 cold, slowest visual | 672 to 719 ms | 1,047 ms |
+| p20 cold, CPU | 1,890 to 2,172 ms | 3,096 ms |
+| p20 cold, peak per query | 58 MB | 28 MB |
+
+- Model: almost twice the baseline in memory (171.5 MB against 92.7 MB). The backup size in the refresh log is slightly smaller (69.1 MB against 72.7 MB), so the two measures disagree in direction. The size in memory is what the capacity holds.
+- Refresh: CPU about 1.5 to 2 times the baseline, peak 777 MB, above the baseline range by 79 MB. One run.
+- Queries: clearly slower. On p20 the slowest visual takes 1,047 ms against 672 to 719 ms, CPU is about 1.5 times, and p05 is about twice as slow. The peak per query is half the baseline (28 MB against 58 MB); v29 shows the same, so it comes from the text keys.

@@ -40,4 +40,24 @@ Auto date/time is on by default in Power BI Desktop and is a common cause of mod
 
 ## Results
 
-Not run yet.
+F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T112137Z-v33-27b3`, query run `20261112T112859Z-v33-0323` (all 792 queries succeeded). Query numbers are medians over 5 repeats, cold cache, all visuals of the page at once. The v00 column is the range over its six refreshes and three query runs on F64 with 1M.
+
+| | v00-baseline | v33-auto-date-time |
+|---|---|---|
+| Refresh peak | 543 to 698 MB | 619 MB |
+| Power Query peak | 270 to 599 MB | 423 MB |
+| Duration | 0.6 to 0.8 min | 0.6 min |
+| CPU | 55 to 71 s | 59 s |
+| Model, backup size in the refresh log | 72.7 MB | 73.8 MB |
+| Model in memory right after the refresh | 92.7 MB | 96.2 MB |
+| p05 cold, slowest visual | 125 to 141 ms | 172 ms |
+| p05 cold, CPU | 313 to 328 ms | 344 ms |
+| p20 cold, slowest visual | 672 to 719 ms | 798 ms |
+| p20 cold, CPU | 1,890 to 2,172 ms | 2,125 ms |
+| p20 cold, peak per query | 58 MB | 55 MB |
+
+- Model: 1.1 MB more in the backup size, 3.5 MB more in memory. The three local date tables are small.
+- Refresh: inside the baseline range. 230,104 more rows loaded (the three local date tables).
+- Queries: p20 slowest visual 798 ms and p05 172 ms, slightly above the baseline range; CPU within or just above it. One run, not a clear effect.
+
+With a marked date table that the fact dates relate to, Auto date/time costs almost nothing. v34 tests the model without a marked date table.

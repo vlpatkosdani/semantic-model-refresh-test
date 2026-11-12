@@ -37,4 +37,22 @@ Aggregating calculated columns are a common way to add customer or product stati
 
 ## Results
 
-Not run yet.
+F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T110213Z-v32-ae1e`, query run `20261112T110702Z-v32-9843` (all 792 queries succeeded). Query numbers are medians over 5 repeats, cold cache, all visuals of the page at once. The v00 column is the range over its six refreshes and three query runs on F64 with 1M.
+
+| | v00-baseline | v32-calc-columns-aggregate |
+|---|---|---|
+| Refresh peak | 543 to 698 MB | 631 MB |
+| Power Query peak | 270 to 599 MB | 595 MB |
+| Duration | 0.6 to 0.8 min | 1.1 min |
+| CPU | 55 to 71 s | 121 s |
+| Model, backup size in the refresh log | 72.7 MB | 220.7 MB |
+| Model in memory right after the refresh | 92.7 MB | 367.9 MB |
+| p05 cold, slowest visual | 125 to 141 ms | 297 ms |
+| p05 cold, CPU | 313 to 328 ms | 517 ms |
+| p20 cold, slowest visual | 672 to 719 ms | 1,486 ms |
+| p20 cold, CPU | 1,890 to 2,172 ms | 3,613 ms |
+| p20 cold, peak per query | 58 MB | 55 MB |
+
+- Model: about 3 times the baseline (220.7 MB backup size, 367.9 MB in memory), the same as v31 with two fewer columns.
+- Refresh: the peak (631 MB) is inside the baseline range, and the Power Query peak (595 MB) is at the top of it. CPU doubles (121 s) and the refresh takes 1.1 min. The aggregating columns cost time, not peak memory. The slowest single column is `Sales[Line Share Of Customer]` at 3.8 s.
+- Queries: about twice as slow as the baseline on p05 and p20, with CPU about 1.7 times. The visuals do not use the new columns, so this was not expected. One run; a repeat is planned before it counts.
