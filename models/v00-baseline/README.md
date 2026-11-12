@@ -93,3 +93,7 @@ F2, run `20261112T133725Z-v00-4050`, pages p05 and p20, cold cache, all visuals 
 
 The 9 failures are the visuals v01 on p05 and p20 and v20 on p20, with `DaxResultsetCountNotSupported`: the REST API returns one result set, and these visuals return more than one. The same 9 failed on 1M. v20 ran for about 22 s on F2 before the error came back, which suggests the query completed within the memory limit, but the API does not show that. A query through XMLA on F2 would.
 
+
+### Query control run, F64, 1M, 2026-11-12
+
+Run `20261112T142436Z-v00-5975`, all 792 queries succeeded. p20 cold, all visuals at once: slowest visual 1,424 ms, CPU 3,673 ms, peak per query 55 MB. The three runs on 2026-11-10 gave 672 to 719 ms and CPU 1,890 to 2,172 ms. The model and the queries are the same, so the capacity was about twice as slow for queries in the afternoon of 2026-11-12. The peak per query did not change. Query times on this capacity are only comparable between runs made close together.

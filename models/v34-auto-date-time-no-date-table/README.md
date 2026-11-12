@@ -42,4 +42,17 @@ Auto date/time adds the most tables when no date table is marked. In this model 
 
 ## Results
 
-Not run yet.
+F64, 1M, 2026-11-12. Refresh run `20261112T134438Z-v34-9a21`, query run `20261112T134925Z-v34-85a1` (all 792 queries succeeded). Query numbers are medians over 5 repeats, cold cache, all visuals of the page at once.
+
+| | v00-baseline | v33 (Date marked) | v34 (Date not marked) |
+|---|---|---|---|
+| Refresh peak | 543 to 698 MB | 619 MB | 707 MB |
+| Power Query peak | 270 to 599 MB | 423 MB | 421 MB |
+| CPU | 55 to 71 s | 59 s | 99 s |
+| Model, backup size in the refresh log | 72.7 MB | 73.8 MB | 74 MB |
+| Model in memory right after the refresh | 92.7 MB | 96.2 MB | 96.9 MB |
+| p20 cold, peak per query | 58 MB | 55 MB | 55 MB |
+
+- Model: the two extra local date tables add 0.7 MB in memory over v33. With the fact date columns related to the Date table, Auto date/time costs a few MB whether the Date table is marked or not.
+- Refresh: the peak is 9 MB above the baseline range, and CPU (99 s) is high. A v00-baseline refresh 20 minutes later also used 99 s of CPU, so the CPU says more about the capacity at that time than about the model.
+- Queries: p20 slowest visual 1,486 ms, CPU 3,346 ms. A control run of v00-baseline 35 minutes later was just as slow (1,424 ms, CPU 3,673 ms), so the capacity was slower at that time and these times cannot be compared with the earlier runs. An interleaved run with v00 is needed. The peak per query is the same as the baseline.

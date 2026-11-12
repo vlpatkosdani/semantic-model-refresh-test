@@ -57,7 +57,7 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T112137Z-v33-27b3`, que
 | p20 cold, peak per query | 58 MB | 55 MB |
 
 - Model: 1.1 MB more in the backup size, 3.5 MB more in memory. The three local date tables are small.
-- Refresh: inside the baseline range. 230,104 more rows loaded (the three local date tables).
+- Refresh: inside the baseline range.
 - Queries: p20 slowest visual 798 ms and p05 172 ms, slightly above the baseline range; CPU within or just above it. One run, not a clear effect.
 
 With a marked date table that the fact dates relate to, Auto date/time costs almost nothing. v34 tests the model without a marked date table.
