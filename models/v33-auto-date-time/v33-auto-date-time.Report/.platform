@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v33-auto-date-time"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "231eaee3-c289-4ea7-b969-cb2730b9c896"
+  }
+}

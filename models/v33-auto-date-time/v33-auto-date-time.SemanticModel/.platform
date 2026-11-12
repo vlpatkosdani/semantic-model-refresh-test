@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v33-auto-date-time"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e180bddc-f5a7-491b-9a93-40bfe4f97067"
+  }
+}

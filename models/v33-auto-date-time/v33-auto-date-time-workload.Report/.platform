@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v33-auto-date-time-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "6cfae829-4369-547a-a8ef-dc5c402e6059"
+  }
+}
