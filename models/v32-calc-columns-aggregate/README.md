@@ -72,4 +72,4 @@ v00-baseline, v32 and v34 back to back, twice, between 14:42 and 15:48 UTC (roun
 
 Runs: v00 `20261112T144321Z-v00-7624`, `20261112T152844Z-v00-eda9`; v32 `20261112T145014Z-v32-e5da`, `20261112T153443Z-v32-c8ba`; v34 `20261112T145703Z-v34-b6c0`, `20261112T154139Z-v34-c119`.
 
-Run back to back, the three models give the same query times, CPU and memory, within about 10 % between rounds. Neither the 30 aggregating calculated columns nor Auto date/time without a marked date table changes the cost of the report's queries.
+Run back to back, the three models give the same results: the slowest visual on p20 is 1,407 to 1,580 ms, CPU 3,299 to 3,831 ms and the peak per query 55 MB for all three, and the spread within one model across the two rounds is as large as the spread between models. Neither the 30 aggregating calculated columns nor Auto date/time without a marked date table changes the cost of the report's queries.
