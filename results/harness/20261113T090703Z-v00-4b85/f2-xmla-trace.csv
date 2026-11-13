@@ -1,0 +1,312 @@
+eventclass,eventsubclass,starttime,endtime,duration,cputime,textdata,success,error
+QueryEnd,DAXQuery,2026-11-13 09:10:01.360,2026-11-13 09:10:05.346,3988,17078,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v05;mode=cold;conc=xmla;rep=1""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Customer'[Country], ""IsGrandTotalRowTotal""), ""Sales_Amount"", 'Sales'[Sales Amount], ""Margin"", 'Sales'[Margin], ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[Country], 1)
+EVALUATE
+	__DS0PrimaryWindowed
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Customer'[Country]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:01.344Z"",
+	""timeEnd"": ""2026-11-13T09:10:05.348Z"",
+
+	""durationMs"": 4004,
+	""vertipaqJobCpuTimeMs"": 16969,
+	""queryProcessingCpuTimeMs"": 109,
+	""totalCpuTimeMs"": 17078,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 424099,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 9
+}",<NA>,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:05.941Z"",
+	""timeEnd"": ""2026-11-13T09:10:05.941Z"",
+
+	""durationMs"": 0,
+	""queryProcessingCpuTimeMs"": 0,
+	""totalCpuTimeMs"": 0,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 0,
+
+	""discoverType"": 35
+}",<NA>,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:06.004Z"",
+	""timeEnd"": ""2026-11-13T09:10:06.176Z"",
+
+	""durationMs"": 172,
+	""queryProcessingCpuTimeMs"": 156,
+	""totalCpuTimeMs"": 172,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 0,
+
+	""commandType"": ""Batch"",
+	""discoverType"": 136
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:10:13.736,2026-11-13 09:10:17.816,4081,17859,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v05;mode=cold;conc=xmla;rep=2""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Customer'[Country], ""IsGrandTotalRowTotal""), ""Sales_Amount"", 'Sales'[Sales Amount], ""Margin"", 'Sales'[Margin], ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[Country], 1)
+EVALUATE
+	__DS0PrimaryWindowed
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Customer'[Country]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:13.736Z"",
+	""timeEnd"": ""2026-11-13T09:10:17.817Z"",
+
+	""durationMs"": 4081,
+	""vertipaqJobCpuTimeMs"": 17734,
+	""queryProcessingCpuTimeMs"": 125,
+	""totalCpuTimeMs"": 17859,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 424154,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 9
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:10:25.216,2026-11-13 09:10:28.906,3691,17000,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v05;mode=cold;conc=xmla;rep=3""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Customer'[Country], ""IsGrandTotalRowTotal""), ""Sales_Amount"", 'Sales'[Sales Amount], ""Margin"", 'Sales'[Margin], ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Customer'[Country], 1)
+EVALUATE
+	__DS0PrimaryWindowed
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Customer'[Country]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:25.218Z"",
+	""timeEnd"": ""2026-11-13T09:10:28.909Z"",
+
+	""durationMs"": 3691,
+	""vertipaqJobCpuTimeMs"": 16875,
+	""queryProcessingCpuTimeMs"": 125,
+	""totalCpuTimeMs"": 17000,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 424512,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 9
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:10:36.146,2026-11-13 09:10:39.933,3784,15781,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v18;mode=cold;conc=xmla;rep=1""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Store'[Name], ""IsGrandTotalRowTotal""), ""Sales_Amount"", 'Sales'[Sales Amount], ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Store'[Name], 1)
+EVALUATE
+	__DS0PrimaryWindowed
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Store'[Name]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:36.148Z"",
+	""timeEnd"": ""2026-11-13T09:10:39.932Z"",
+
+	""durationMs"": 3784,
+	""vertipaqJobCpuTimeMs"": 15641,
+	""queryProcessingCpuTimeMs"": 141,
+	""totalCpuTimeMs"": 15781,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 423868,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 65
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:10:47.640,2026-11-13 09:10:51.516,3877,17188,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v18;mode=cold;conc=xmla;rep=2""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Store'[Name], ""IsGrandTotalRowTotal""), ""Sales_Amount"", 'Sales'[Sales Amount], ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Store'[Name], 1)
+EVALUATE
+	__DS0PrimaryWindowed
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Store'[Name]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:47.641Z"",
+	""timeEnd"": ""2026-11-13T09:10:51.518Z"",
+
+	""durationMs"": 3877,
+	""vertipaqJobCpuTimeMs"": 17078,
+	""queryProcessingCpuTimeMs"": 109,
+	""totalCpuTimeMs"": 17188,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 423091,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 65
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:10:58.976,2026-11-13 09:11:02.696,3721,16688,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v18;mode=cold;conc=xmla;rep=3""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL('Store'[Name], ""IsGrandTotalRowTotal""), ""Sales_Amount"", 'Sales'[Sales Amount], ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(502, __DS0Core, [IsGrandTotalRowTotal], 0, 'Store'[Name], 1)
+EVALUATE
+	__DS0PrimaryWindowed
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Store'[Name]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:10:58.978Z"",
+	""timeEnd"": ""2026-11-13T09:11:02.699Z"",
+
+	""durationMs"": 3721,
+	""vertipaqJobCpuTimeMs"": 16578,
+	""queryProcessingCpuTimeMs"": 109,
+	""totalCpuTimeMs"": 16688,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 423443,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 65
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:11:10.300,2026-11-13 09:11:29.420,19121,73813,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v20;mode=cold;conc=xmla;rep=1""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL(ROLLUPGROUP('Product'[Category], 'Product'[Category Code]), ""IsGrandTotalRowTotal""), ROLLUPADDISSUBTOTAL('Customer'[Continent], ""IsGrandTotalColumnTotal""), ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(102, SUMMARIZE(__DS0Core, 'Product'[Category], 'Product'[Category Code], [IsGrandTotalRowTotal]), [IsGrandTotalRowTotal], 0, 'Product'[Category Code], 1, 'Product'[Category], 1)
+	VAR __DS0SecondaryBase =
+		SUMMARIZE(__DS0Core, 'Customer'[Continent], [IsGrandTotalColumnTotal])
+	VAR __DS0Secondary =
+		TOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Customer'[Continent], 1)
+	VAR __DS0BodyLimited =
+		NATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, ""ColumnIndex"", __DS0Secondary, [IsGrandTotalColumnTotal], ASC, 'Customer'[Continent], ASC))
+EVALUATE
+	__DS0Secondary
+ORDER BY
+	[IsGrandTotalColumnTotal], 'Customer'[Continent]
+EVALUATE
+	__DS0BodyLimited
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Product'[Category Code], 'Product'[Category], [ColumnIndex]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:11:10.301Z"",
+	""timeEnd"": ""2026-11-13T09:11:29.421Z"",
+
+	""durationMs"": 19121,
+	""vertipaqJobCpuTimeMs"": 73250,
+	""queryProcessingCpuTimeMs"": 563,
+	""totalCpuTimeMs"": 73813,
+	""executionDelayMs"": 0,
+
+	""approximatePeakMemConsumptionKB"": 881023,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 36
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:12:36.686,2026-11-13 09:13:01.460,24771,74844,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v20;mode=cold;conc=xmla;rep=2""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL(ROLLUPGROUP('Product'[Category], 'Product'[Category Code]), ""IsGrandTotalRowTotal""), ROLLUPADDISSUBTOTAL('Customer'[Continent], ""IsGrandTotalColumnTotal""), ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(102, SUMMARIZE(__DS0Core, 'Product'[Category], 'Product'[Category Code], [IsGrandTotalRowTotal]), [IsGrandTotalRowTotal], 0, 'Product'[Category Code], 1, 'Product'[Category], 1)
+	VAR __DS0SecondaryBase =
+		SUMMARIZE(__DS0Core, 'Customer'[Continent], [IsGrandTotalColumnTotal])
+	VAR __DS0Secondary =
+		TOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Customer'[Continent], 1)
+	VAR __DS0BodyLimited =
+		NATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, ""ColumnIndex"", __DS0Secondary, [IsGrandTotalColumnTotal], ASC, 'Customer'[Continent], ASC))
+EVALUATE
+	__DS0Secondary
+ORDER BY
+	[IsGrandTotalColumnTotal], 'Customer'[Continent]
+EVALUATE
+	__DS0BodyLimited
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Product'[Category Code], 'Product'[Category], [ColumnIndex]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:12:36.689Z"",
+	""timeEnd"": ""2026-11-13T09:13:01.459Z"",
+
+	""durationMs"": 24771,
+	""vertipaqJobCpuTimeMs"": 73953,
+	""queryProcessingCpuTimeMs"": 891,
+	""totalCpuTimeMs"": 74844,
+	""executionDelayMs"": 0,
+	""capacityThrottlingMs"": 20000,
+
+	""approximatePeakMemConsumptionKB"": 875763,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 36
+}",<NA>,<NA>
+QueryEnd,DAXQuery,2026-11-13 09:14:08.826,2026-11-13 09:14:28.560,19734,72891,"DEFINE
+	VAR __LabTag = ""run=20261113T090703Z-v00-4b85;page=p20;visual=v20;mode=cold;conc=xmla;rep=3""
+	VAR __DS0Core =
+		SUMMARIZECOLUMNS(ROLLUPADDISSUBTOTAL(ROLLUPGROUP('Product'[Category], 'Product'[Category Code]), ""IsGrandTotalRowTotal""), ROLLUPADDISSUBTOTAL('Customer'[Continent], ""IsGrandTotalColumnTotal""), ""v__Orders"", 'Sales'[# Orders])
+	VAR __DS0PrimaryWindowed =
+		TOPN(102, SUMMARIZE(__DS0Core, 'Product'[Category], 'Product'[Category Code], [IsGrandTotalRowTotal]), [IsGrandTotalRowTotal], 0, 'Product'[Category Code], 1, 'Product'[Category], 1)
+	VAR __DS0SecondaryBase =
+		SUMMARIZE(__DS0Core, 'Customer'[Continent], [IsGrandTotalColumnTotal])
+	VAR __DS0Secondary =
+		TOPN(102, __DS0SecondaryBase, [IsGrandTotalColumnTotal], 1, 'Customer'[Continent], 1)
+	VAR __DS0BodyLimited =
+		NATURALLEFTOUTERJOIN(__DS0PrimaryWindowed, SUBSTITUTEWITHINDEX(__DS0Core, ""ColumnIndex"", __DS0Secondary, [IsGrandTotalColumnTotal], ASC, 'Customer'[Continent], ASC))
+EVALUATE
+	__DS0Secondary
+ORDER BY
+	[IsGrandTotalColumnTotal], 'Customer'[Continent]
+EVALUATE
+	__DS0BodyLimited
+ORDER BY
+	[IsGrandTotalRowTotal] DESC, 'Product'[Category Code], 'Product'[Category], [ColumnIndex]
+
+[WaitTime: 0 ms]",Success,<NA>
+ExecutionMetrics,<NA>,NaT,NaT,<NA>,<NA>,"{
+	""timeStart"": ""2026-11-13T09:14:08.827Z"",
+	""timeEnd"": ""2026-11-13T09:14:28.576Z"",
+
+	""durationMs"": 19749,
+	""vertipaqJobCpuTimeMs"": 72375,
+	""queryProcessingCpuTimeMs"": 531,
+	""totalCpuTimeMs"": 72906,
+	""executionDelayMs"": 0,
+	""capacityThrottlingMs"": 20000,
+
+	""approximatePeakMemConsumptionKB"": 880973,
+
+	""commandType"": ""Statement"",
+	""queryDialect"": 3,
+	""queryResultRows"": 36
+}",<NA>,<NA>
