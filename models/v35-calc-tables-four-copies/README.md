@@ -34,7 +34,7 @@ F64, 10M, 2026-11-13, harness run `20261113T122445Z-v35-6ea1`:
 
 | Model | Result | Peak | Power Query | Duration | CPU | Model in memory after |
 |---|---|---|---|---|---|---|
-| v23 (1 copy), 4 runs on 10M | refreshed | 13,062 to 13,139 MB | 1,202 to 1,870 MB | 7 to 9 min | 809 to 878 s | 1,379 to 1,387 MB |
+| v23 (1 copy), 3 harness runs on 10M | refreshed | 13,062 to 13,139 MB | 1,707 to 1,870 MB | 7.5 to 8.2 min | 809 to 878 s | 1,379 to 1,387 MB |
 | v35 (4 copies) | refreshed | 13,063 MB | 1,601 MB | 17 min | 1,827 s | 2,803 MB |
 
 Four copies did not raise the peak at all. The model doubled (2,803 MB against 1,379 MB), `Sales Copy` took 448 s instead of 99 s for its 94.9M rows, but the peak stayed at 13,063 MB. So the calculated tables do not add up in the peak: they are built one after the other, and a table's working memory is released before the next one starts. The peak is set by the single most expensive step.
