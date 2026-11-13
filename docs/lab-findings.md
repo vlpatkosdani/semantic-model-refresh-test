@@ -78,6 +78,16 @@ Measured on Premium Per User (100 GB per model) with an XMLA trace on 2026-11-11
 - The calculated tables (a full copy of Sales with six RELATED columns, a SUMMARIZECOLUMNS summary, a product by day CROSSJOIN, CALENDARAUTO) add about 900 MB on 1M and about 11.7 GB on 10M. On 10M that model needs F64, while the clean baseline on the same data peaks at 2 GB.
 - "Outside Power Query" is the total peak minus the Power Query peak. The two peaks may not happen at the same moment, so treat it as an approximation.
 
+The calculated tables do not add up in the peak. They are built one after the other, and the peak is set by the most expensive one. On 10M (F64, 2026-11-13):
+
+| Model | Change against v23 | Peak | Model in memory after |
+|---|---|---|---|
+| v23 | | 13,062 to 13,139 MB (3 runs) | 1,379 MB |
+| v35 | `Sales Copy` with four copies of the Sales rows, 94.9M rows instead of 23.7M | 13,063 MB | 2,803 MB |
+| v36 | `Sales Summary` by month instead of year, about 3M more rows | 14,759 MB | 1,406 MB |
+
+69M more rows in a copy table doubled the model and the refresh time and left the peak unchanged. 3M more rows in the `SUMMARIZECOLUMNS` summary with three measures, one a distinct count, raised it by 1.7 GB. A large calculated table makes the model larger; a summary calculated with measures is what costs refresh memory.
+
 ### 8. Power Query has a second, separate limit
 
 v19 builds five analysis tables in Power Query from the 10M data (merges, Group By with distinct counts, rankings, a self join) and loads only small results. On F64 it fails with a different error: "The M evaluation exceeded the memory limit ... Container exited unexpectedly with code 0x0000DEAD". Its peaks at failure were 14.4 to 24.5 GB, below the 25.6 GB model limit. With the self join reduced to 1M data it still fails, and in every failed run the query still running was `PQ Customer RFM`, which ranks all 1.68M customers three times. A single Power Query evaluation has its own memory limit, separate from the model limit. On Premium Per User (100 GB per model) v19 failed with the same error at 22,186 MB (2026-11-13), so this limit does not grow with the model limit. v99 used 25,958 MB of Power Query memory on PPU and refreshed, so the limit is not on the total Power Query memory of a refresh; it fits a limit per evaluation, which `PQ Customer RFM` alone exceeds. Its size was not measured and is not documented.
@@ -101,6 +111,8 @@ The full kitchen sink model (v99) refreshed on Pro, giving a .pbix of 458 MB. On
 
 On a Premium Per User workspace (100 GB per model) v99 refreshed, and an XMLA trace of the refresh measured its full peak: 26,115 MB, of which 25,958 MB is Power Query, in 20 minutes, with a 622 MB model (harness run `20261110T162110Z-v99-0db3`, 2026-11-10). That is 2 percent over F64's 25.6 GB limit, which is where F64 cancelled it, and 8.5 times F2's limit. Premium Per User runs on shared hardware, so this is recorded as its own capacity, PPU, and not as an F64 number.
 
+v99h also failed on F64 and refreshed on PPU (peak 25,971 MB). So PPU refreshes models that F64 cannot, but in this lab only by a small margin above the F64 limit, and only for models whose peak is Power Query memory. A larger model side peak was not reached: v35 and v36 tried to push the calculated tables past 25.6 GB and stayed at 13.1 and 14.8 GB (finding 7). Power Query memory per evaluation is not raised by PPU at all (finding 8).
+
 ## Diagnostic path, for the narrative
 
 1. v99, a kitchen sink of antipatterns, fails on F2 and F64 and refreshes on Pro.
@@ -116,7 +128,7 @@ On a Premium Per User workspace (100 GB per model) v99 refreshed, and an XMLA tr
 - The source cannot fold. With a SQL source, sorts and Group By steps that fold run in the database and do not cost refresh memory. The findings apply to non folding sources (files, web, APIs) and to steps that break folding.
 - Most models were refreshed once or a few times, so most peaks are single measurements. Repeated runs can differ a lot. v00 on 1M peaked at 785 MB on 2026-11-04 and at 551 MB on 2026-11-07, with the same rows loaded and the same parallelism; almost all of the difference is Power Query (677 vs 312 MB). v99d, on the other hand, stayed within 1 percent over three runs (16,005 to 16,056 MB). Failed runs vary more, since the peak depends on when the engine stops. Differences of a few hundred MB between single runs are not evidence of a design effect; the large effects in this document (several times the baseline) are well beyond that spread.
 - F2 results are pass or fail only.
-- A second refresh right after the first, with the old data still in memory, passed on F2 for v22 and v23 on 1M data. Those models peak far below the limit, so this does not test how much the old copy adds.
+- The model already in memory does not count in the measured peak. v23 on 10M peaked at 13,064 MB from empty, 13,139 MB with its 1,379 MB model loaded, and 13,062 MB after `clearValues` (F64, 2026-11-12). It counts against the limit instead: the command memory limit is the SKU maximum minus the model size before the refresh.
 - The 124 MB customer model was not reproduced exactly. The lab shows the mechanism with models of 72 to 114 MB that need 3.5 to 5.3 GB.
 - Peak figures are the engine's approximate peak, not an operating system measurement.
 
@@ -144,6 +156,8 @@ For v00 on 1M the service size is 73 MB, and a DAX query in the service over `IN
 | v22-dax-calc-columns | baseline plus 8 calculated columns | refreshed | 686 | 430 | refreshed twice | 101 MB |  | 72.5 MB |  |
 | v23-dax-calc-tables | baseline plus 4 calculated tables, 1M | refreshed | 1,405 | 399 | refreshed twice | 184 MB |  | 115.1 MB |  |
 | v23-dax-calc-tables | same, 10M | refreshed | 13,062 | 1,202 | not run | 1,833 MB | 1,379 MB |  |  |
+| v35-calc-tables-four-copies | v23 with four copies in Sales Copy, 10M | refreshed | 13,063 | 1,601 | not run |  | 2,803 MB |  |  |
+| v36-calc-summary-month-grain | v23 with Sales Summary by month, 10M | refreshed | 14,759 | 1,194 | not run |  | 1,406 MB |  |  |
 | v24-bidirectional | Sales to Customer filters in both directions | refreshed | 608 | 335 | not run | 73 MB |  | 49.2 MB |  |
 | v24a-second-fact | baseline plus a second fact table, Orders | refreshed | 933 | 911 | not run | 103 MB |  | 66.2 MB |  |
 | v24b-second-fact-bidirectional | v24a with Sales to Customer in both directions | refreshed | 1,102 | 1,003 | not run | 103 MB |  | 66.2 MB |  |
