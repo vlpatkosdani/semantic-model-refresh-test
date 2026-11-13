@@ -33,6 +33,7 @@ modes = "cold,warm"           # queries task: cold clears the cache before each 
 concurrency = "seq,page"      # queries task: seq sends visuals one by one; page sends all visuals of a page at once
 repeats = "5"                 # queries task: measured renders per page, mode and concurrency
 clear_first = "false"         # refresh task: "true" runs a clearValues refresh first, so the model is empty when the full refresh starts
+visuals = ""                  # xmla task: comma separated visual ids (v20,v18); empty means every visual of the pages
 
 # METADATA ********************
 
@@ -962,6 +963,139 @@ def run_queries_task(cap, head, tag, dataset_id):
             df.insert(0, k, v)
     return q, per_page, summary
 
+
+# xmla task: the same visual DAX, one query at a time with a cold cache, sent through XMLA (semantic-link
+# evaluate_dax) under an XMLA trace. For capacities without workspace monitoring (F2): the REST API returns one
+# result set and no server numbers, the trace gives the duration, CPU and peak memory of each query, and XMLA
+# reports the engine's own error text, for example the per-query memory limit.
+XMLA_TRACE_SCHEMAS = [
+    ("full", {"QueryEnd": ["EventClass", "EventSubclass", "StartTime", "EndTime", "Duration", "CpuTime",
+                           "TextData", "Success", "Error"],
+              "Error": ["EventClass", "TextData"],
+              "ExecutionMetrics": ["EventClass", "TextData"]}),
+    ("minimal columns", {"QueryEnd": ["EventClass", "Duration", "CpuTime", "TextData"],
+                         "ExecutionMetrics": ["EventClass", "TextData"]}),
+]
+
+
+def query_metrics_from_trace(raw):
+    """Query ExecutionMetrics events (not the refresh's, not the connection's) with their own time window."""
+    out = []
+    if not len(raw) or "textdata" not in raw:
+        return pd.DataFrame(out)
+    for _, r in raw[raw["eventclass"].astype(str).str.contains("ExecutionMetrics|136", regex=True)].iterrows():
+        try:
+            m = json.loads(r["textdata"])
+        except Exception:
+            continue
+        if "approximatePeakMemConsumptionKB" not in m or "mEnginePeakMemoryKB" in m or "tabularConnectionTimeoutMs" in m:
+            continue
+        out.append({"time_start": pd.to_datetime(m.get("timeStart"), utc=True, errors="coerce"),
+                    "time_end": pd.to_datetime(m.get("timeEnd"), utc=True, errors="coerce"),
+                    "peak_mem_kb": float(m.get("approximatePeakMemConsumptionKB") or 0),
+                    "duration_ms": float(m.get("durationMs") or 0),
+                    "total_cpu_ms": float(m.get("totalCpuTimeMs") or 0),
+                    "vertipaq_cpu_ms": float(m.get("vertipaqJobCpuTimeMs") or 0),
+                    "formula_cpu_ms": float(m.get("queryProcessingCpuTimeMs") or 0),
+                    "result_rows": float(m.get("queryResultRows") or 0),
+                    "error_count": int(m.get("errorCount") or 0)})
+    return pd.DataFrame(out)
+
+
+def run_xmla_task(cap, head, tag, dataset_id):
+    ws = WORKSPACES[cap]
+    qdef = json.loads(notebookutils.fs.head(f"{LAKE}/Files/{queries_file}", 50_000_000))
+    if qdef["variant"] != variant:
+        raise HarnessStop(f"{queries_file} is for {qdef['variant']}, not {variant}")
+    wanted = [v.strip() for v in visuals.split(",") if v.strip()]
+    plan = []
+    for page in [p.strip() for p in pages.split(",") if p.strip()]:
+        if page not in qdef["pages"]:
+            raise HarnessStop(f"page {page} not in {queries_file}")
+        plan += [(page, v) for v in qdef["pages"][page]["visuals"] if not wanted or v in wanted]
+    if not plan:
+        raise HarnessStop(f"no visuals {visuals} on pages {pages}")
+    sent = []
+    try:
+        conn = fabric.create_trace_connection(dataset_id, workspace=ws)
+    except Exception as e:
+        raise HarnessStop(f"{cap}: could not open a trace connection to {variant}: {type(e).__name__}: {str(e)[:1500]}")
+    with conn:
+        trace, used = None, None
+        for name, schema in XMLA_TRACE_SCHEMAS:
+            t = None
+            try:
+                t = conn.create_trace(schema, f"lab-{run_id}-q{len(name)}")
+                t.start()
+                trace, used = t, name
+                break
+            except Exception as e:
+                note(f"{cap}: trace schema '{name}' refused: {str(e)[:300]}")
+                if t is not None:
+                    try:
+                        t.drop()
+                    except Exception:
+                        pass
+        if trace is None:
+            raise HarnessStop(f"{cap}: could not start a trace on {variant}")
+        with trace:
+            note(f"{cap}: trace started ({used}), {len(plan)} visuals, {repeats} repeats, cold cache")
+            for page, v in plan:
+                for rep in range(1, int(repeats) + 1):
+                    labs.clear_cache(dataset=dataset_id, workspace=ws)
+                    time.sleep(2)
+                    qtag = f"run={run_id};page={page};visual={v};mode=cold;conc=xmla;rep={rep}"
+                    rows_back, err, t0 = None, "", time.time()
+                    try:
+                        res = fabric.evaluate_dax(dataset=dataset_id, dax_string=tagged(qdef["visuals"][v]["dax"], qtag),
+                                                  workspace=ws)
+                        rows_back = len(res)
+                    except Exception as e:
+                        err = f"{type(e).__name__}: {str(e)[:2000]}"
+                    t1 = time.time()
+                    sent.append({"tag": qtag, "page": page, "visual": v, "visual_type": qdef["visuals"][v]["type"],
+                                 "rep": rep, "client_start_utc": dt.datetime.fromtimestamp(t0, dt.timezone.utc).isoformat(),
+                                 "client_end_utc": dt.datetime.fromtimestamp(t1, dt.timezone.utc).isoformat(),
+                                 "client_ms": round((t1 - t0) * 1000), "rows_first_result": rows_back,
+                                 "client_error": err})
+                    note(f"{cap}: {page} {v} rep {rep}: {round((t1 - t0) * 1000)} ms"
+                         + (f", ERROR {err[:300]}" if err else ""))
+                    time.sleep(3)
+            time.sleep(20)   # the trace events come a little after the last query
+            raw = trace.stop()
+    raw = norm_cols(raw if isinstance(raw, pd.DataFrame) else pd.DataFrame(raw))
+    note(f"{cap}: trace captured {len(raw)} events: " +
+         ", ".join(f"{k} {n}" for k, n in raw["eventclass"].astype(str).value_counts().items()) if len(raw) else
+         f"{cap}: trace captured no events")
+    q = pd.DataFrame(sent)
+    # QueryEnd carries the query text, so it is matched by the tag; ExecutionMetrics has no query text and is
+    # matched by its own start time inside the query's client window (queries run one at a time, 5 s apart).
+    qe = raw[raw["eventclass"].astype(str).str.contains("QueryEnd|^10$", regex=True)] if len(raw) else raw
+    em = query_metrics_from_trace(raw)
+    for i, r in q.iterrows():
+        hit = qe[qe["textdata"].astype(str).str.contains(r["tag"], regex=False)] if len(qe) else qe
+        if len(hit):
+            h = hit.iloc[-1]
+            q.loc[i, "server_ms"] = pd.to_numeric(h.get("duration"), errors="coerce")
+            q.loc[i, "cpu_ms"] = pd.to_numeric(h.get("cputime"), errors="coerce")
+            q.loc[i, "server_success"] = str(h.get("success", ""))
+            q.loc[i, "server_error"] = str(h.get("error", ""))[:500]
+        if len(em):
+            a = pd.Timestamp(r["client_start_utc"]) - pd.Timedelta(seconds=2)
+            b = pd.Timestamp(r["client_end_utc"]) + pd.Timedelta(seconds=2)
+            m = em[(em["time_start"] >= a) & (em["time_start"] <= b)]
+            if len(m):
+                top = m.sort_values("peak_mem_kb").iloc[-1]
+                for c in ("peak_mem_kb", "total_cpu_ms", "vertipaq_cpu_ms", "formula_cpu_ms", "result_rows", "error_count"):
+                    q.loc[i, c] = top[c]
+                q.loc[i, "metrics_events"] = len(m)
+    q["failed"] = q["client_error"].fillna("") != ""
+    meta = {"harness_run_id": run_id, "notebook_run_id": notebook_run_id, "variant": variant, "data_tag": data_tag,
+            "data_tag_readback": tag, "capacity": cap, "workspace_head": head}
+    for k, v in reversed(list(meta.items())):
+        q.insert(0, k, v)
+    return q, raw
+
 # METADATA ********************
 
 # META {
@@ -1057,7 +1191,7 @@ def model_sizes(cap):
 rows, sections, stop_reason = [], [], None
 query_frames = {"queries": [], "pages": [], "summary": []}
 try:
-    if task not in ("refresh", "queries", "sizes"):
+    if task not in ("refresh", "queries", "sizes", "xmla"):
         raise HarnessStop(f"unknown task {task}")
     if task == "sizes":
         for cap in target_list:
@@ -1070,8 +1204,8 @@ try:
                                                               "data_mb", "dictionary_mb", "hierarchy_mb",
                                                               "relationship_mb", "error"]]), ""]
         target_list = []   # nothing else to do for this task
-    if task == "queries" and not queries_file:
-        raise HarnessStop("task queries needs queries_file")
+    if task in ("queries", "xmla") and not queries_file:
+        raise HarnessStop(f"task {task} needs queries_file")
     prepared = {}
     for cap in target_list:                      # all checks pass before any refresh or query starts
         if cap not in WORKSPACES:
@@ -1081,6 +1215,23 @@ try:
         prepared[cap] = (head, dataset_id, tag, params)
 
     hist = history()
+    for cap in (target_list if task == "xmla" else []):
+        head, dataset_id, tag, params = prepared[cap]
+        q, raw = run_xmla_task(cap, head, tag, dataset_id)
+        query_frames.setdefault("xmla", []).append(q)
+        if len(raw):
+            write_csv(f"{RUN_DIR}/{cap.lower()}-xmla-trace.csv", raw.astype(str))
+        cols = [c for c in ["page", "visual", "visual_type", "rep", "client_ms", "server_ms", "cpu_ms", "peak_mem_kb",
+                            "result_rows", "metrics_events", "client_error"] if c in q]
+        show = q[cols].copy()
+        if "client_error" in show:
+            show["client_error"] = show["client_error"].fillna("").str.slice(0, 300)
+        sections += [f"## {cap}", "",
+                     f"- {len(q)} queries through XMLA, one at a time, cold cache; {int(q['failed'].sum())} failed",
+                     f"- Workspace at {head[:7] if head else '?'}, DataTag read back {tag}",
+                     "- Server time, CPU and peak memory from an XMLA trace (QueryEnd and ExecutionMetrics)", "",
+                     md_table(show), ""]
+
     for cap in (target_list if task == "queries" else []):
         head, dataset_id, tag, params = prepared[cap]
         q, per_page, summary_df = run_queries_task(cap, head, tag, dataset_id)

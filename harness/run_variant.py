@@ -238,6 +238,7 @@ APPEND_TO = {
     "query-queries.csv": ROOT / "results" / "query-runs.csv",
     "query-pages.csv": ROOT / "results" / "query-pages.csv",
     "query-summary.csv": ROOT / "results" / "query-summary.csv",
+    "query-xmla.csv": ROOT / "results" / "query-xmla.csv",
 }
 
 
@@ -318,12 +319,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("variant")
     ap.add_argument("--targets", default="F64", help="comma separated, run in this order: F2,F64")
-    ap.add_argument("--task", choices=["refresh", "queries", "sizes"], default="refresh",
+    ap.add_argument("--task", choices=["refresh", "queries", "sizes", "xmla"], default="refresh",
                     help="sizes: VertiPaq size of every model in the target workspaces (variant: all)")
     ap.add_argument("--pages", default="p01,p05,p10,p20", help="queries task")
     ap.add_argument("--modes", default="cold,warm", help="queries task")
     ap.add_argument("--concurrency", default="seq,page", help="queries task")
-    ap.add_argument("--repeats", default="5", help="queries task")
+    ap.add_argument("--repeats", default="5", help="queries and xmla tasks")
+    ap.add_argument("--visuals", default="", help="xmla task: comma separated visual ids, empty means all on the pages")
     ap.add_argument("--clear-first", action="store_true",
                     help="refresh task: run a clearValues refresh before the full refresh")
     ap.add_argument("--attach", metavar="JOB_ID", help="wait for a job that is already running and pull its results")
@@ -363,7 +365,7 @@ def main():
     params = {"variant": args.variant, "data_tag": data_tag, "targets": ",".join(targets),
               "expected_commit": commit, "harness_run_id": run_id, "task": args.task,
               "clear_first": "true" if args.clear_first else "false"}
-    if args.task == "queries":
+    if args.task in ("queries", "xmla"):
         qpath = f"reports/queries/{args.variant}.json"
         try:
             qtext = git("show", f"HEAD:{qpath}")   # the committed queries, not the working tree
@@ -372,7 +374,8 @@ def main():
         lake_id = item_id(HARNESS_WS, "Lakehouse", LAKEHOUSE)
         upload(lake_id, f"harness/queries/{run_id}.json", qtext.encode("utf-8"))
         params.update({"queries_file": f"harness/queries/{run_id}.json", "pages": args.pages,
-                       "modes": args.modes, "concurrency": args.concurrency, "repeats": args.repeats})
+                       "modes": args.modes, "concurrency": args.concurrency, "repeats": args.repeats,
+                       "visuals": args.visuals})
     job_id, job = run_notebook(params)
     if job.get("status") != "Completed":
         print(f"Notebook job ended {job.get('status')}: {json.dumps(job.get('failureReason'))[:1500]}")
