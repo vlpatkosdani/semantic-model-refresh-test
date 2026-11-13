@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v36-calc-summary-month-grain-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "8317414f-658e-5910-97c6-1d7c739b417e"
+  }
+}

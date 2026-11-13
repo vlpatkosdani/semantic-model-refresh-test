@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "v36-calc-summary-month-grain"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "19519a94-bdc3-496c-b967-16f1fc6a978b"
+  }
+}
