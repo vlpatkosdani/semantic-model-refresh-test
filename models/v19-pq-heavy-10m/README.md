@@ -63,3 +63,16 @@ The four failed runs peaked at 22.0 to 24.5 GB, below the 25.6 GB model limit of
 The error text lists `Odbc.DataSource/Microsoft ODBC Driver for Google BigQuery` under "Used features". This model has no BigQuery source; it only reads Parquet files with `Web.Contents`. The error of the last run (2026-11-06 10:33:54 UTC) is the same "M evaluation exceeded the memory limit ... 0x0000DEAD" but lists "Used features: (none)", so the BigQuery mention was most likely left over from another evaluation in the same container, not part of this model.
 
 Five more F64 runs on 2026-11-06 (09:55 to 10:33), with `DataTag = data-1m-v1`, `HeavyDataTag = data-10m-v1` and `BasketDataTag = data-1m-v1`. All failed. The first peaked at 20,158 MB. The next four peaked at 14,366 to 14,733 MB, with `PQ Basket Pairs` finishing in 24 seconds. In all four, `PQ Customer RFM` was the only query still running when the refresh was stopped. So the self-join is not what fails F64; the RFM query, three rankings over all 1.68M customers of the 10M data, is. The peak at the stop is well below the 25.6 GB model limit, which fits a limit per Power Query evaluation rather than one for the whole model.
+
+### Premium Per User, 2026-11-13
+
+To see whether the Power Query limit grows with the model limit, v19 was refreshed on the Premium Per User workspace, where a model may use 100 GB instead of 25.6 GB on F64. Same parameters as committed (`DataTag = data-1m-v1`, `HeavyDataTag = data-10m-v1`, `BasketDataTag = data-10m-v1`), the same as the four F64 runs of 2026-11-06 from 09:15 to 09:48. Harness run `20261113T102051Z-v19-8b99`, measured with an XMLA trace.
+
+| Capacity | Result | Peak | Power Query | Duration | CPU |
+|---|---|---|---|---|---|
+| PPU (100 GB per model) | failed: "The M evaluation exceeded the memory limit ... Container exited unexpectedly with code 0x0000DEAD" | 22,186 MB | 22,066 MB | 23 min | 5,440 s |
+
+The same error as on F64, at a similar peak (F64: 22.0 to 24.5 GB with the same parameters). `PQ Customer Segments`, `PQ Top Products by Year` and `PQ Basket Pairs` finished (Basket Pairs took 994 s); `PQ Customer RFM` and `PQ Delivery Days` were still running when the container stopped, as on F64.
+
+So the Power Query limit does not grow with the model limit: 100 GB per model on PPU did not help. v99 on PPU used 25,958 MB of Power Query memory in total and refreshed, so the limit is not on the total Power Query memory of a refresh either. That fits a limit per Power Query evaluation (per container), which `PQ Customer RFM` alone exceeds. Its size is not documented and was not measured here.
+

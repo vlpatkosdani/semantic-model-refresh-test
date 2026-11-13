@@ -46,5 +46,17 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T081715Z-v29-b0f1`, que
 | p20 cold, peak per query | 58 MB | 28 MB |
 
 - Model: 1.5 times the baseline in memory (141.9 MB against 92.7 MB). The backup size in the refresh log is slightly smaller, as in v28.
-- Refresh: the peak of 1,489 MB is almost all Power Query (1,465 MB), far above the baseline's 270 to 599 MB. The Power Query side of this model only adds a type change on the key columns, so this needs a repeat before it counts as an effect. Duration and CPU are the same as the baseline.
+- Refresh: the first run peaked at 1,489 MB, almost all Power Query (1,465 MB). Two more runs, alternating with v00-baseline on 2026-11-13, are below. Duration is the same as the baseline.
 - Queries: no slower than the baseline, if anything slightly faster on p20. The peak per query halves (28 MB against 58 MB), as in v28. One run.
+
+### Repeat, alternating with v00-baseline, F64, 1M, 2026-11-13
+
+| Run | Harness run | Peak | Power Query | CPU | In memory after |
+|---|---|---|---|---|---|
+| v00-baseline | `20261113T091752Z-v00-89cb` | 703 MB | 423 MB | 57 s | 92.7 MB |
+| v29 | `20261113T092511Z-v29-4df0` | 665 MB | 398 MB | 104 s | 141.9 MB |
+| v00-baseline | `20261113T093230Z-v00-9a26` | 856 MB | 847 MB | 57 s | 92.7 MB |
+| v29 | `20261113T093950Z-v29-f936` | 1,735 MB | 1,720 MB | 122 s | 141.9 MB |
+
+Two of the three v29 runs peaked at 1.5 to 1.7 GB of Power Query memory, one stayed at the baseline level. v00-baseline has not gone above 847 MB in any run. So converting the keys to text probably raises the Power Query peak, but by a varying amount. CPU was about twice the baseline in the two runs of 2026-11-13, but not in the first run (56 s). The model in memory is the same in every run: 141.9 MB against 92.7 MB.
+

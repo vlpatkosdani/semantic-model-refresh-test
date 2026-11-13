@@ -49,6 +49,6 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T082856Z-v31-5697`, que
 | p20 cold, CPU | 1,890 to 2,172 ms | 1,926 ms |
 | p20 cold, peak per query | 58 MB | 58 MB |
 
-- Model: about 3 times the baseline (223 MB backup size, 316.8 MB in memory). The largest model change of the data type and calculated column runs.
+- Model: about 3 times the baseline (223 MB backup size, 316.8 MB in memory). DAX Studio on the .pbix downloaded from F64 and opened without a refresh: 244,865,133 bytes, 233.5 MB, of which Sales is 225.1 MB. The largest model change of the data type and calculated column runs.
 - Refresh: the peak of 913 MB is above the baseline range, while Power Query stays at the baseline level, so the extra memory comes from the model side, the calculated columns. CPU is about 1.5 times. One run.
 - Queries: the same as the baseline. The visuals do not use the new columns.

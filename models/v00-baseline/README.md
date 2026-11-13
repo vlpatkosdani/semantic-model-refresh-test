@@ -91,9 +91,24 @@ The matrix v20 needs 861 MB, under the 1,024 MB per query of F2 but close to it.
 
 F2, run `20261112T133725Z-v00-4050`, pages p05 and p20, cold cache, all visuals at once, 3 repeats. F2 has no workspace monitoring, so these are times at the client from the REST API (`executeQueries`) only, with no server time, CPU or memory. 66 of 75 queries succeeded and none failed on memory. The page p20 took 22.3 s (median), against 19.1 s on F64; the matrix v20 was the slowest visual at 22.2 s.
 
-The 9 failures are the visuals v01 on p05 and p20 and v20 on p20, with `DaxResultsetCountNotSupported`: the REST API returns one result set, and these visuals return more than one. The same 9 failed on 1M. v20 ran for about 22 s on F2 before the error came back, which suggests the query completed within the memory limit, but the API does not show that. A query through XMLA on F2 would.
+The 9 failures are the visuals v01 on p05 and p20 and v20 on p20, with `DaxResultsetCountNotSupported`: the REST API returns one result set, and these visuals return more than one. The same 9 failed on 1M. v20 ran for about 22 s on F2 before the error came back, which suggested the query completed within the memory limit, but the API does not show that. The XMLA runs below confirm it.
 
 
 ### Query control run, F64, 1M, 2026-11-12
 
 Run `20261112T142436Z-v00-5975`, all 792 queries succeeded. p20 cold, all visuals at once: slowest visual 1,424 ms, CPU 3,673 ms, peak per query 55 MB. The three runs on 2026-11-10 gave 672 to 719 ms and CPU 1,890 to 2,172 ms. The model and the queries are the same, so the capacity was about twice as slow for queries in the afternoon of 2026-11-12. The peak per query did not change. Query times on this capacity are only comparable between runs made close together.
+
+### Heaviest queries through XMLA, 10M, F64 and F2, 2026-11-13
+
+The three heaviest p20 visuals sent through XMLA (harness task `xmla`), one at a time, cold cache, 3 repeats each, with an XMLA trace for server time, CPU and peak memory. F64 run `20261113T084411Z-v00-4f8b`, F2 run `20261113T090703Z-v00-4b85`. All 18 queries succeeded.
+
+| Visual | F64 server time | F64 CPU | F2 server time | F2 CPU | Peak per query (both) |
+|---|---|---|---|---|---|
+| v20 matrix | 9.0 to 14.3 s | 46.6 to 49.8 s | 19.1 to 24.8 s | 72.9 to 74.8 s | 855 to 860 MB |
+| v18 table | 1.9 s | 9.9 to 10.7 s | 3.7 to 3.9 s | 15.8 to 17.2 s | 413 MB |
+| v05 table | 1.9 to 2.0 s | 10.4 to 10.9 s | 3.7 to 4.1 s | 17.0 to 17.9 s | 413 to 415 MB |
+
+The matrix v20 fits on F2: it needs about 860 MB against the 1,024 MB per-query limit, 84 % of it. A query needs the same memory on both capacities; F2 takes about twice the time and 1.5 times the CPU. On F64 the trace gave the same peak as the workspace logs for the same query a day earlier (861 MB).
+
+For v20's second and third runs on F2 the client waited 60 to 65 s while the engine reported 20 to 25 s. Something on F2 held the queries for about 40 s outside the engine's own time, possibly throttling after the 12 minute 10M refresh; the trace does not show what.
+

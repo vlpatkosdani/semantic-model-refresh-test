@@ -51,12 +51,23 @@ If a check fails, the notebook writes a summary with the reason and ends as fail
 | `harness_run_id` | empty | Run folder name. Empty means generate one |
 | `max_refresh_minutes` | `120` | When to stop polling a refresh |
 | `max_log_wait_minutes` | `20` | When to stop waiting for the monitoring event |
-| `task` | `refresh` | `refresh`, `queries` (query workload) or `sizes` (VertiPaq size of every model in the target workspaces; driver: `run_variant.py all --task sizes --targets F64old,F2,PPU`) |
+| `task` | `refresh` | `refresh`, `queries` (query workload) `xmla` (chosen visual queries through XMLA under a trace) or `sizes` (VertiPaq size of every model in the target workspaces; driver: `run_variant.py all --task sizes --targets F64old,F2,PPU`) |
+| `visuals` | empty | xmla task (`--visuals v20,v18`): visual ids to send; empty means every visual of the pages in `pages` |
 | `clear_first` | `false` | Refresh task (`--clear-first`): run a `clearValues` refresh first, so the model is empty when the full refresh starts |
 
 Every refresh records `size_before_mb`, the model's VertiPaq size in memory just before the full refresh, and `command_limit_mb`, the SKU maximum minus that size. The command memory limit of a refresh is the SKU maximum minus what the model already uses (Chris Webb, "Power BI semantic model memory errors, part 3", 2024), which is what the resource governance errors report as "database size before command execution".
 
 The sizes task reads the storage statistics of every model as it is (data, dictionaries, hierarchies, relationships; VertiPaq Analyzer's Total Size). v00 on 1M read 93 MB right after a refresh and 66 MB a day later with the same data, the difference all in the dictionaries; touching every column first did not change the 66 MB. Each refresh therefore also records `size_after_mb`, the size right after it. DAX Studio on the model just refreshed in Desktop gave 92.7 MB.
+
+## The xmla task
+
+For capacities without workspace monitoring (F2). The queries task sends DAX through the executeQueries REST API, which returns one result set and no server numbers: on F2 it shows only the client time, and a matrix (two result sets) comes back as `DaxResultsetCountNotSupported` even when the engine finished it.
+
+The xmla task sends the DAX of chosen visuals through XMLA (semantic-link `evaluate_dax`), one at a time, with the cache cleared before each, while an XMLA trace records `QueryEnd` and `ExecutionMetrics`. `QueryEnd` is matched to the query by the `__LabTag` variable in its text; `ExecutionMetrics` has no query text and is matched by its start time inside the query's client window. Results go to `results/query-xmla.csv` and the raw trace to the run folder.
+
+On F64 the trace gave the same peak as the workspace logs for the same query (v00 10M, p20 v20: 860 MB through the trace, 861 MB in SemanticModelLogs).
+
+Example: `python harness/run_variant.py v00-baseline --targets F2 --task xmla --pages p20 --visuals v20,v18,v05 --repeats 3`
 
 ## How the refresh is matched in the logs
 
