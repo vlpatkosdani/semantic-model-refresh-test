@@ -45,4 +45,15 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T082436Z-v30-ccac`, que
 
 No measurable difference from the baseline in model size, refresh or queries. At 1M, decimal number instead of fixed decimal for the five price and cost columns costs nothing here.
 
-The check that the measures return the same totals as the baseline has not been done yet.
+Totals against v00-baseline, both on F64 with 1M, 2026-11-13 (DAX query through executeQueries, grand total and per year, 11 rows):
+
+| Measure | v00-baseline (fixed decimal) | v30 (decimal number) | Difference |
+|---|---|---|---|
+| Sales Amount | 2,298,959,215.6985 | 2,298,959,214.469255 | 1.23 |
+| Total Cost | 1,013,993,459.634 | 1,013,993,459.6339607 | 0.00004 |
+| Margin | 1,284,965,756.0645 | 1,284,965,754.8352942 | 1.23 |
+| Margin % | 0.558933689336496 | 0.5589336891006766 | 0.0000000002 |
+| Total Quantity | 7,384,887 | 7,384,887 | 0 |
+| # Orders | 980,666 | 980,666 | 0 |
+
+The Total Cost difference is floating point rounding. The Sales Amount difference is not: 4,742 of the 24,212 distinct Net Price values in the source have a fifth decimal (for example 74.24325). Fixed decimal stores four decimals, so the baseline rounds them; decimal number keeps them. The v30 total is the one closer to the source data. On a total of 2.3 billion the difference is 1.23, invisible in any report formatted to whole numbers or two decimals.
