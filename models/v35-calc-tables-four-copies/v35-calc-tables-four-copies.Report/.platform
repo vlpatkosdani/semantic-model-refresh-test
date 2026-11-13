@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v35-calc-tables-four-copies"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "0e6bbfbf-be04-4e2d-96bc-709339cd5dcb"
+  }
+}

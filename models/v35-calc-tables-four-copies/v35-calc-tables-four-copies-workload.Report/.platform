@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "v35-calc-tables-four-copies-workload"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "dba0c390-5d62-5ef6-8778-1f49c5686153"
+  }
+}
