@@ -27,4 +27,14 @@ v35 (four copies of `Sales Copy`) had the same refresh peak as v23 on 10M, about
 
 ## Results
 
-Not run yet.
+F64, 10M, 2026-11-13, harness run `20261113T132605Z-v36-6c53`:
+
+| Model | Result | Peak | Power Query | Duration | Rows loaded | Model in memory after |
+|---|---|---|---|---|---|---|
+| v23, 3 harness runs | refreshed | 13,062 to 13,139 MB | 1,707 to 1,870 MB | 7.5 to 8.2 min | 75.9M | 1,379 to 1,387 MB |
+| v35, four copies of `Sales Copy` | refreshed | 13,063 MB | 1,601 MB | 17 min | 147.1M | 2,803 MB |
+| v36, `Sales Summary` by month | refreshed | 14,759 MB | 1,194 MB | 7 min | 78.9M | 1,406 MB |
+
+By month `Sales Summary` gets about 3M more rows than by year (rows loaded 78.9M against 75.9M; by year it has 16.5M), about 18 % more: most customers buy in only a few months of a year. The peak rose by 1.7 GB, 13 %. v35 added 69M rows to `Sales Copy` and the peak did not move. So the peak follows `Sales Summary`, the `SUMMARIZECOLUMNS` with three measures, not the size of the model or of the largest table.
+
+It still fits F64 (58 % of the 25.6 GB limit), so it was not run on PPU.
