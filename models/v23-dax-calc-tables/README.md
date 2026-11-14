@@ -49,8 +49,10 @@ v99f added three of these tables to v99e and the F64 peak did not change (22,889
 |---|---|---|---|---|---|---|
 | F64 | 1M | first | refreshed | 1,405 | 399 | 0.9 min |
 | F64 | 10M | first | refreshed | 13,062 | 1,202 | 8.6 min |
-| F2 | 1M | first | refreshed | | | |
-| F2 | 1M | second, right after the first | refreshed | | | |
+| F2 | 1M | first | refreshed | n/a | n/a | n/a |
+| F2 | 1M | second, right after the first | refreshed | n/a | n/a | n/a |
+
+F2 has no workspace monitoring, so the two F2 runs have a result but no peak or duration (n/a). Both refreshed: the model needs about 1.4 GB on 1M, well under the F2 limit of about 3 GB, even with the first copy still in memory. Whether the copy in memory counts in the peak was measured on 10M instead (the three runs on 2026-11-12 below): it does not.
 
 On F64 the peak is 1,405 MB, of which 399 MB is Power Query. The part outside Power Query grows from about 110 MB in the baseline to about 1,000 MB. Unlike the calculated columns, the calculated tables clearly raise the peak. The model grows from 73 MB to 184 MB (backup size in the refresh log, MB of 1,048,576 bytes). `Sales Copy` takes 8 seconds, `Product Date Grid` 5.5 seconds, `Sales Summary` 4.6 seconds.
 
