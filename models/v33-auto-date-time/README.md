@@ -61,3 +61,14 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261112T112137Z-v33-27b3`, que
 - Queries: p20 slowest visual 798 ms and p05 172 ms, slightly above the baseline range; CPU within or just above it. One run, not a clear effect.
 
 With a marked date table that the fact dates relate to, Auto date/time costs almost nothing. v34 tests the model without a marked date table.
+
+### Query runs, F64, 1M, 2026-11-13 and 2026-11-14
+
+| Time (UTC) | p05 slowest visual | p20 slowest visual | p20 CPU | Nearest v00-baseline run |
+|---|---|---|---|---|
+| 13 Nov 15:41 | 297 ms | 1,470 ms | 3,798 ms | 15:54, fast (672 ms) |
+| 13 Nov 16:13 | 266 ms | 1,595 ms | 3,877 ms | 15:54, fast (672 ms) |
+| 13 Nov 20:50, right after a refresh | 251 ms | 1,346 ms | 3,519 ms | 20:45, slow (1,283 ms) |
+| 14 Nov 08:00 | 125 ms | 797 ms | 1,986 ms | 08:20, slow (1,548 ms) |
+
+Query time on F64 has a fast and a slow state per model, about two times apart, that last for hours and change by themselves (`docs/lab-findings-queries.md`, finding 7). Memory per query does not change with it. v33 was in the slow state while v00 was fast, and in the fast state while v00 was slow. So the query times do not show an effect of Auto date/time; they cover both states of the baseline.

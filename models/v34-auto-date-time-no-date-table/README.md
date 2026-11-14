@@ -73,3 +73,12 @@ v00-baseline, v32 and v34 back to back, twice, between 14:42 and 15:48 UTC (roun
 Runs: v00 `20261112T144321Z-v00-7624`, `20261112T152844Z-v00-eda9`; v32 `20261112T145014Z-v32-e5da`, `20261112T153443Z-v32-c8ba`; v34 `20261112T145703Z-v34-b6c0`, `20261112T154139Z-v34-c119`.
 
 Run back to back, the three models give the same results: the slowest visual on p20 is 1,407 to 1,580 ms, CPU 3,299 to 3,831 ms and the peak per query 55 MB for all three, and the spread within one model across the two rounds is as large as the spread between models. Neither the 30 aggregating calculated columns nor Auto date/time without a marked date table changes the cost of the report's queries.
+
+### More query runs, F64, 1M, 2026-11-13 and 2026-11-14
+
+| Time (UTC) | p05 slowest visual | p20 slowest visual | p20 CPU | p20 peak per query | Nearest v00-baseline run |
+|---|---|---|---|---|---|
+| 13 Nov 20:54, right after a refresh | 125 ms | 703 ms | 2,031 ms | 58 MB | 20:45, slow (1,283 ms) |
+| 14 Nov 08:07 | 266 ms | 1,251 ms | 3,114 ms | 55 MB | 08:20, slow (1,548 ms) |
+
+Query time on F64 has a fast and a slow state per model, about two times apart, that last for hours and change by themselves (`docs/lab-findings-queries.md`, finding 7). Memory per query does not change with it. v34 ran in both states, so the interleaved runs of 2026-11-12, where all three models were in the slow state, are the fair comparison, and they show no difference.

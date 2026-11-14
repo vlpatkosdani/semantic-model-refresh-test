@@ -80,33 +80,60 @@ A model three to four times larger in memory answered the same queries in the sa
 
 Text keys are the exception in the other direction: with the key columns as text (v28, v29) the largest query needed 28 MB instead of 58 MB, in every run. Whether text keys also change query time is not settled (see the v28 caveat below).
 
-### 7. Query time on the capacity drifts; memory does not
+### 7. The same model runs in a fast or a slow state, for hours; memory does not change
 
-On the afternoon of 2026-11-12 the F64 capacity ran the unchanged baseline about twice as slowly as on 2026-11-10 (p20 slowest visual 1,424 to 1,563 ms, CPU 3,535 to 3,736 ms). Runs of v32 and v34 made that afternoon looked twice as slow as the baseline until a baseline run next to them showed the same. The peak per query did not change.
+The unchanged baseline ran p20 in two clearly separate states on F64, never in between:
 
-Run back to back, alternating, the three models gave the same results:
+| State | p05 slowest visual | p20 slowest visual | p20 CPU |
+|---|---|---|---|
+| fast | 125 to 141 ms | 656 to 719 ms | 1,877 to 2,172 ms |
+| slow | 234 to 281 ms | 1,283 to 1,563 ms | 3,140 to 3,847 ms |
 
-| Round | Model | p05 slowest visual | p20 slowest visual | p20 CPU | p20 peak per query |
-|---|---|---|---|---|---|
-| 1 | v00-baseline | 266 ms | 1,516 ms | 3,736 ms | 55 MB |
-| 1 | v32 | 282 ms | 1,454 ms | 3,643 ms | 55 MB |
-| 1 | v34 | 281 ms | 1,470 ms | 3,627 ms | 55 MB |
-| 2 | v00-baseline | 281 ms | 1,563 ms | 3,535 ms | 55 MB |
-| 2 | v32 | 281 ms | 1,580 ms | 3,831 ms | 55 MB |
-| 2 | v34 | 282 ms | 1,407 ms | 3,299 ms | 55 MB |
+Over 18 hours on 2026-11-13 and 2026-11-14, v00, v33 and v34 each ran in both states, and they switched independently of each other:
 
-So query times are only comparable between runs made close together, with a baseline run between them. Memory per query can be compared across days.
+| Time (UTC) | v00-baseline | v33-auto-date-time | v34-auto-date-time-no-date-table |
+|---|---|---|---|
+| 13 Nov 14:14 to 15:54 | fast (703, 672 ms) | slow (1,470 ms at 15:41) | |
+| 13 Nov 16:13 | | slow (1,595 ms) | |
+| 13 Nov 17:25 to 20:16 | slow (1,298 to 1,393 ms, 4 runs) | | |
+| 13 Nov 20:30 to 20:45 | refreshed, then slow (1,283 ms) | refreshed, then slow (1,346 ms) | refreshed, then fast (703 ms) |
+| 13 Nov 22:28 | fast (656 ms) | | |
+| 14 Nov 08:00 to 08:20 | slow (1,548 ms) | fast (797 ms) | slow (1,251 ms) |
+
+The state is not the capacity at a given moment (two models minutes apart were in different states), not the model design (each model was in both), not a refresh (v00 was slow right after one) and not whether the model was loaded again from storage (all were reloaded before the test and after it). It lasts for hours and changes by itself. A plausible cause, which cannot be checked from outside, is the backend machine the service places each model on.
+
+Memory per query is the same in both states (55 to 58 MB on p20), and so are all the memory findings.
+
+So query time differences of up to two times between models, or between runs of the same model, say nothing on their own. In this lab that covers v22, v32, v33 and v34: each was within the two states of the baseline. The earlier interleaved runs of v32 and v34 against v00 (2026-11-12) happened to find all three in the slow state.
+
+Effects that are larger than the two states are clear: v26 (bad DAX, 25 times), 10M against 1M (26 times), v27 (high-cardinality page) and v25 (many-to-many page) on their own pages. One smaller observation holds in every run so far: with text keys (v28, v29) the largest query needs half the memory, 28 MB against 55 to 58 MB. Their times are also a little below the baseline in each state: 547 to 594 ms in the fast state (baseline 656 to 719 ms) and 1,047 ms in the one slow-state run (baseline 1,283 to 1,563 ms). Four runs; worth a mention, not a claim.
+
+### 8. A query that does not fail still costs capacity
+
+The Capacity Metrics app on F2 shows what the v26 query run cost (screenshot `f2-capacity-metrics-v26-queries-timepoint.png`, the timepoint 2026-11-11 21:30:00 to 21:30:30 local time, UTC+1, during harness run `20261111T202553Z-v26-d062`): 108 queries used 5,396 CU seconds in total. F2 has 2 CU, so that is 45 minutes of the whole capacity for one run of two pages with 3 repeats. Interactive use is smoothed over 5 minutes, 10 timepoints: 539.6 CU seconds per 30 second timepoint against the 60 F2 has, shown as 899 % utilization. That timepoint had no throttling.
+
+Each of the three query runs on F2 put the capacity into the overloaded state with interactive delay, for 36 to 47 minutes (System events in the Capacity Metrics app, `f2-capacity-metrics-system-events.png`; times converted from local time, UTC+1):
+
+| Overloaded from (UTC) | For | Query run on F2 |
+|---|---|---|
+| 2026-11-11 20:28 | 36 min | v26-bad-dax, p05 and p20, 3 repeats (from 20:25) |
+| 2026-11-12 13:39 | 46 min | v00-baseline 10M, p05 and p20, 3 repeats (13:37 to 13:40) |
+| 2026-11-13 09:11 | 47 min | v00-baseline 10M, 9 queries through XMLA (09:09 to 09:16) |
+
+While a capacity is overloaded, the service delays interactive queries. That explains the extra wait in the XMLA run: the first v20 query ran at about 09:10, before the overload, with no extra wait; the second and third ran after 09:11, and the client waited about 40 s longer than the engine needed.
+
+The 10 minute interactive share went up to about 440 % (delay starts above 100 %, `f2-capacity-metrics-interactive-delay.png`) and the 60 minute share up to about 90 % (rejection starts at 100 %, `f2-capacity-metrics-interactive-rejection.png`). So one person running these reports on F2 delayed every other report on the capacity for more than half an hour and came close to having queries rejected, without a single query failing on memory (v00) or with only four failing (v26). Background work was never at risk: the 24 hour background share stayed below about 35 %.
 
 ## Method notes
 
 - The executeQueries REST API returns one result set. A matrix with column headers returns two, and the API reports `DaxResultsetCountNotSupported` even though the engine finished the query. On F64 the harness checks the server log and counts such a query as a success; on F2 it cannot, so the matrices v01 and v20 show as failed there. The `xmla` task gets around this.
 - On F64 the XMLA trace and workspace monitoring gave the same peak for the same query (v00 10M, v20: 860 and 861 MB).
 - Workspace monitoring does not always store every event: for v26, 195 of 792 queries had no `ExecutionMetrics` event 40 minutes after the run, and for v24b none of the p10 queries sent all at once. The peak columns use the queries that have one.
-- On F2, for v20's second and third runs, the client waited 60 to 65 s while the engine reported 20 to 25 s. Something on F2 held those queries for about 40 s outside the engine's own time; the trace does not show what.
+- On F2, for v20's second and third runs, the client waited 60 to 65 s while the engine reported 20 to 25 s. Something on F2 held those queries for about 40 s outside the engine's own time; the trace does not show what. The capacity was overloaded with interactive delay from 09:11 UTC, after the first run and before the second (finding 8).
 
 ## Caveats
 
-- Most models had one query run. Only v00, v32 and v34 were run alternating. Three models were slower than the baseline's range in a single run each, and are not confirmed: v22 (p20 1,047 ms; its run on 2026-11-10 at 13:02 falls between two baseline runs that day at 672 and 719 ms, so this one is more likely real), v28 (1,047 ms, on 2026-11-11 with no baseline run near it) and v33 (798 ms).
+- Query time on F64 has two states per model, about two times apart (finding 7). A single run, or a few runs, of two models cannot show a difference smaller than that. Memory per query does not have this problem.
 - 1M rows is small. Differences that are a few ms on 1M can be seconds on 10M, as finding 3 shows for the baseline itself. Only v00 was run on 10M.
 - The data is synthetic (Contoso). Real data with more distinct values, or more skew, changes the size of each effect.
 - F64 is a trial capacity. Query times on other capacities, and on the same capacity at another time (finding 7), differ; memory per query should not.
@@ -118,10 +145,10 @@ F64, 1M, cold cache, all visuals at once, medians over 5 repeats, unless noted. 
 | Model | Date | p05 slowest | p20 slowest | p20 CPU | p20 peak per query | Note |
 |---|---|---|---|---|---|---|
 | v00-baseline | 2026-11-10, 3 runs | 125 to 141 ms | 672 to 719 ms | 1,890 to 2,172 ms | 58 MB | |
-| v00-baseline | 2026-11-12, 3 runs | 266 to 281 ms | 1,424 to 1,563 ms | 3,535 to 3,736 ms | 55 MB | capacity slower that afternoon |
+| v00-baseline | 2026-11-12 to 14, 12 runs | 125 to 281 ms | 656 to 1,563 ms | 1,877 to 3,847 ms | 55 to 58 MB | both states |
 | v00-baseline, 10M | 2026-11-12 | 3,737 ms | 18,545 ms | 102,611 ms | 861 MB | |
 | v00-baseline, 10M, F2 (xmla, 3 visuals, one at a time) | 2026-11-13 | | v20 19.1 to 24.8 s | v20 72.9 to 74.8 s | v20 860 MB | fits the 1,024 MB limit |
-| v22-dax-calc-columns | 2026-11-10 | 141 ms | 1,047 ms | 2,625 ms | 58 MB | one run, between two normal v00 runs |
+| v22-dax-calc-columns | 2026-11-10 and 13, 3 runs | 141 to 156 ms | 813 to 1,047 ms | 1,985 to 2,625 ms | 55 to 58 MB | not refreshed in the new workspace for the first 2026-11-13 runs (no data) |
 | v23-dax-calc-tables | 2026-11-10 | 125 ms | 672 ms | 2,001 ms | 58 MB | |
 | v24-bidirectional | 2026-11-10 | 125 ms | 688 ms | 1,986 ms | 55 MB | |
 | v24a-second-fact | 2026-11-10 | 141 ms | 719 ms | 2,017 ms | 55 MB | po 16 ms |
@@ -129,12 +156,12 @@ F64, 1M, cold cache, all visuals at once, medians over 5 repeats, unless noted. 
 | v25-many-to-many | 2026-11-11 | 188 ms | 877 ms | 2,267 ms | 55 MB | pm 609 ms, wrong totals |
 | v26-bad-dax | 2026-11-10 | 8,552 ms | 17,165 ms | 99,145 ms | 2,655 MB | 4 visuals fail on F2 |
 | v27-high-cardinality-visuals | 2026-11-10 | 141 ms | 766 ms | 2,079 ms | 55 MB | p27 1,345 ms, 231 MB |
-| v28-types-all-text | 2026-11-11 | 250 ms | 1,047 ms | 3,096 ms | 28 MB | one run, time not confirmed |
+| v28-types-all-text | 2026-11-11 and 13, 3 runs | 125 to 250 ms | 547 to 1,047 ms | 1,690 to 3,096 ms | 28 MB | fast state on 2026-11-13 |
 | v29-keys-as-text | 2026-11-12 | 141 ms | 594 ms | 1,737 ms | 28 MB | |
 | v30-double-instead-of-fixed | 2026-11-12 | 141 ms | 657 ms | 1,955 ms | 58 MB | |
 | v31-calc-columns-row | 2026-11-12 | 125 ms | 703 ms | 1,926 ms | 58 MB | |
-| v32-calc-columns-aggregate | 2026-11-12, 4 runs | 281 to 297 ms | 1,454 to 1,580 ms | 3,613 to 3,831 ms | 55 MB | same as v00 alongside |
-| v33-auto-date-time | 2026-11-12 | 172 ms | 798 ms | 2,125 ms | 55 MB | one run |
-| v34-auto-date-time-no-date-table | 2026-11-12, 3 runs | 281 to 282 ms | 1,407 to 1,486 ms | 3,299 to 3,627 ms | 55 MB | same as v00 alongside |
+| v32-calc-columns-aggregate | 2026-11-12, 4 runs | 281 to 297 ms | 1,454 to 1,580 ms | 3,613 to 3,831 ms | 55 MB | slow state, as v00 alongside |
+| v33-auto-date-time | 2026-11-12 to 14, 5 runs | 125 to 297 ms | 797 to 1,595 ms | 1,986 to 3,877 ms | 55 MB | both states |
+| v34-auto-date-time-no-date-table | 2026-11-12 to 14, 5 runs | 125 to 282 ms | 703 to 1,486 ms | 2,031 to 3,627 ms | 55 to 58 MB | both states |
 
 Each model's README has the per-visual numbers and the warm cache and one-by-one modes.

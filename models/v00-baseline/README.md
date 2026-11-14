@@ -96,7 +96,7 @@ The 9 failures are the visuals v01 on p05 and p20 and v20 on p20, with `DaxResul
 
 ### Query control run, F64, 1M, 2026-11-12
 
-Run `20261112T142436Z-v00-5975`, all 792 queries succeeded. p20 cold, all visuals at once: slowest visual 1,424 ms, CPU 3,673 ms, peak per query 55 MB. The three runs on 2026-11-10 gave 672 to 719 ms and CPU 1,890 to 2,172 ms. The model and the queries are the same, so the capacity was about twice as slow for queries in the afternoon of 2026-11-12. The peak per query did not change. Query times on this capacity are only comparable between runs made close together.
+Run `20261112T142436Z-v00-5975`, all 792 queries succeeded. p20 cold, all visuals at once: slowest visual 1,424 ms, CPU 3,673 ms, peak per query 55 MB. The three runs on 2026-11-10 gave 672 to 719 ms and CPU 1,890 to 2,172 ms. The model and the queries are the same. Later runs (2026-11-13 and 14) showed that this is a state of the model on the service, fast or slow, about two times apart, lasting for hours and changing by itself, and not the capacity as a whole: two models a few minutes apart were in different states. The peak per query did not change. See `docs/lab-findings-queries.md`, finding 7, for all 12 runs.
 
 ### Heaviest queries through XMLA, 10M, F64 and F2, 2026-11-13
 
@@ -110,5 +110,5 @@ The three heaviest p20 visuals sent through XMLA (harness task `xmla`), one at a
 
 The matrix v20 fits on F2: it needs about 860 MB against the 1,024 MB per-query limit, 84 % of it. A query needs the same memory on both capacities; F2 takes about twice the time and 1.5 times the CPU. On F64 the trace gave the same peak as the workspace logs for the same query a day earlier (861 MB).
 
-For v20's second and third runs on F2 the client waited 60 to 65 s while the engine reported 20 to 25 s. Something on F2 held the queries for about 40 s outside the engine's own time, possibly throttling after the 12 minute 10M refresh; the trace does not show what.
+For v20's second and third runs on F2 the client waited 60 to 65 s while the engine reported 20 to 25 s. The Capacity Metrics app shows why: F2 went into the overloaded state with interactive delay at 09:11 UTC, after the first v20 run and before the second, and stayed there for 47 minutes. The service delays interactive queries while a capacity is overloaded (`docs/lab-findings-queries.md`, finding 8).
 

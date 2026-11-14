@@ -1,0 +1,399 @@
+capacity,model,T,DataBytes,HierarchyBytes,RelationshipBytes,DictionaryBytes,TotalBytes
+F64,v00-baseline,Currency Exchange,375800,158424,6440,211448,752112
+F64,v00-baseline,Store,2024,2696,0,77986,82706
+F64,v00-baseline,Customer,1561200,3750432,0,12616283,17927915
+F64,v00-baseline,Date,45976,183368,0,338398,567742
+F64,v00-baseline,Sales,40419144,4974144,247152,3913216,49553656
+F64,v00-baseline,Product,40912,67424,0,371402,479738
+F64,v18-pq-10m-summary,Customer,1904,0,0,7224,9128
+F64,v18-pq-10m-summary,Date,2448,0,0,8016,10464
+F64,v18-pq-10m-summary,Product,2040,0,0,7048,9088
+F64,v18-pq-10m-summary,Sales,1904,0,0,4840,6744
+F64,v18-pq-10m-summary,Store,1360,0,0,4304,5664
+F64,v18-pq-10m-summary,Currency Exchange,680,0,0,2112,2792
+F64,v18-pq-10m-summary,Store Year Summary,816,0,0,1976,2792
+F64,v19-pq-heavy-10m,Customer,1904,0,0,7224,9128
+F64,v19-pq-heavy-10m,Date,2448,0,0,8016,10464
+F64,v19-pq-heavy-10m,Product,2040,0,0,7048,9088
+F64,v19-pq-heavy-10m,Sales,1904,0,0,4840,6744
+F64,v19-pq-heavy-10m,Store,1360,0,0,4304,5664
+F64,v19-pq-heavy-10m,Currency Exchange,680,0,0,2112,2792
+F64,v19-pq-heavy-10m,PQ Customer Segments,1088,0,0,3416,4504
+F64,v19-pq-heavy-10m,PQ Customer RFM,952,0,0,2568,3520
+F64,v19-pq-heavy-10m,PQ Top Products by Year,680,0,0,1896,2576
+F64,v19-pq-heavy-10m,PQ Delivery Days,680,0,0,1640,2320
+F64,v19-pq-heavy-10m,PQ Basket Pairs,544,0,0,1856,2400
+F64,v20-pq-sort,Customer,1904,0,0,7224,9128
+F64,v20-pq-sort,Date,2448,0,0,8016,10464
+F64,v20-pq-sort,Product,2040,0,0,7048,9088
+F64,v20-pq-sort,Sales,1904,0,0,4840,6744
+F64,v20-pq-sort,Store,1360,0,0,4304,5664
+F64,v20-pq-sort,Currency Exchange,680,0,0,2112,2792
+F64,v21-pq-group-by,Customer,1904,0,0,7224,9128
+F64,v21-pq-group-by,Date,2448,0,0,8016,10464
+F64,v21-pq-group-by,Product,2040,0,0,7048,9088
+F64,v21-pq-group-by,Sales,1904,0,0,4840,6744
+F64,v21-pq-group-by,Store,1360,0,0,4304,5664
+F64,v21-pq-group-by,Currency Exchange,680,0,0,2112,2792
+F64,v21-pq-group-by,Customer Stats,816,0,0,1976,2792
+F64,v22-dax-calc-columns,Store,2024,2696,0,77986,82706
+F64,v22-dax-calc-columns,Customer,1561200,3750432,0,12616283,17927915
+F64,v22-dax-calc-columns,Currency Exchange,375800,158424,6440,211448,752112
+F64,v22-dax-calc-columns,Product,40912,67424,0,371402,479738
+F64,v22-dax-calc-columns,Date,45976,183368,0,338398,567742
+F64,v22-dax-calc-columns,Sales,65095152,6563568,247152,10829781,82735653
+F64,v23-dax-calc-tables,Customer,23605712,35531584,0,125407127,184544423
+F64,v23-dax-calc-tables,Product,40912,67424,0,371402,479738
+F64,v23-dax-calc-tables,Product Date Grid,14162008,52480,0,270254,14484742
+F64,v23-dax-calc-tables,Date,45976,183368,0,338398,567742
+F64,v23-dax-calc-tables,Currency Exchange,375800,158424,6440,211448,752112
+F64,v23-dax-calc-tables,Sales Copy,501047032,45888880,0,3680916,550616828
+F64,v23-dax-calc-tables,Calendar Auto,122392,144096,0,36151,302639
+F64,v23-dax-calc-tables,Store,2024,2696,0,77986,82706
+F64,v23-dax-calc-tables,Sales Summary,122016880,18359840,0,22034,140398754
+F64,v23-dax-calc-tables,Sales,374943936,50681688,3605544,40404672,469635840
+F64,v24-bidirectional,Customer,1904,0,0,7224,9128
+F64,v24-bidirectional,Date,2448,0,0,8016,10464
+F64,v24-bidirectional,Product,2040,0,0,7048,9088
+F64,v24-bidirectional,Sales,1904,0,0,4840,6744
+F64,v24-bidirectional,Store,1360,0,0,4304,5664
+F64,v24-bidirectional,Currency Exchange,680,0,0,2112,2792
+F64,v24a-second-fact,Customer,1904,0,0,7224,9128
+F64,v24a-second-fact,Date,2448,0,0,8016,10464
+F64,v24a-second-fact,Product,2040,0,0,7048,9088
+F64,v24a-second-fact,Sales,1904,0,0,4840,6744
+F64,v24a-second-fact,Store,1360,0,0,4304,5664
+F64,v24a-second-fact,Currency Exchange,680,0,0,2112,2792
+F64,v24a-second-fact,Orders,952,0,0,2528,3480
+F64,v24b-second-fact-bidirectional,Customer,1904,0,0,7224,9128
+F64,v24b-second-fact-bidirectional,Date,2448,0,0,8016,10464
+F64,v24b-second-fact-bidirectional,Product,2040,0,0,7048,9088
+F64,v24b-second-fact-bidirectional,Sales,1904,0,0,4840,6744
+F64,v24b-second-fact-bidirectional,Store,1360,0,0,4304,5664
+F64,v24b-second-fact-bidirectional,Currency Exchange,680,0,0,2112,2792
+F64,v24b-second-fact-bidirectional,Orders,952,0,0,2528,3480
+F64,v25-many-to-many,Currency Exchange,375800,158424,6440,211448,752112
+F64,v25-many-to-many,Store,2024,2696,0,77986,82706
+F64,v25-many-to-many,Sales,40419144,4974144,247152,3913216,49553656
+F64,v25-many-to-many,Customer Segment,4200264,420176,0,18766,4639206
+F64,v25-many-to-many,Product,40912,67424,0,371402,479738
+F64,v25-many-to-many,Date,45976,183368,0,338398,567742
+F64,v25-many-to-many,Customer,1561200,3750432,0,12616283,17927915
+F64,v26-bad-dax,Customer,1904,0,0,7224,9128
+F64,v26-bad-dax,Date,2448,0,0,8016,10464
+F64,v26-bad-dax,Product,2040,0,0,7048,9088
+F64,v26-bad-dax,Sales,1904,0,0,4840,6744
+F64,v26-bad-dax,Store,1360,0,0,4304,5664
+F64,v26-bad-dax,Currency Exchange,680,0,0,2112,2792
+F64,v27-high-cardinality-visuals,Customer,1904,0,0,7224,9128
+F64,v27-high-cardinality-visuals,Date,2448,0,0,8016,10464
+F64,v27-high-cardinality-visuals,Product,2040,0,0,7048,9088
+F64,v27-high-cardinality-visuals,Sales,1904,0,0,4840,6744
+F64,v27-high-cardinality-visuals,Store,1360,0,0,4304,5664
+F64,v27-high-cardinality-visuals,Currency Exchange,680,0,0,2112,2792
+F64,v28-types-all-text,Store,1792,3408,0,165336,170536
+F64,v28-types-all-text,Product,27520,72304,0,470029,569853
+F64,v28-types-all-text,Customer,1561200,3847040,0,14299290,19707530
+F64,v28-types-all-text,Currency Exchange,322232,284496,6440,1048392,1661560
+F64,v28-types-all-text,Sales,37287016,8896832,247152,31230932,77661932
+F64,v28-types-all-text,Date,55760,196176,0,481728,733664
+F64,v29-keys-as-text,Store,2024,2696,0,93616,98336
+F64,v29-keys-as-text,Currency Exchange,375800,158424,6440,211448,752112
+F64,v29-keys-as-text,Product,40912,67424,0,355113,463449
+F64,v29-keys-as-text,Date,45976,183368,0,338398,567742
+F64,v29-keys-as-text,Customer,1561200,3750432,0,13326009,18637641
+F64,v29-keys-as-text,Sales,37287016,8896832,247152,31395538,77826538
+F64,v30-double-instead-of-fixed,Sales,40419144,4974336,247152,4122984,49763616
+F64,v30-double-instead-of-fixed,Customer,1561200,3750432,0,12616283,17927915
+F64,v30-double-instead-of-fixed,Date,45976,183368,0,338398,567742
+F64,v30-double-instead-of-fixed,Currency Exchange,375800,158424,6440,211448,752112
+F64,v30-double-instead-of-fixed,Product,40912,67424,0,371402,479738
+F64,v30-double-instead-of-fixed,Store,2024,2696,0,77986,82706
+F64,v31-calc-columns-row,Store,2024,2696,0,77986,82706
+F64,v31-calc-columns-row,Product,40912,67424,0,371402,479738
+F64,v31-calc-columns-row,Currency Exchange,375800,158424,6440,211448,752112
+F64,v31-calc-columns-row,Date,45976,183368,0,338398,567742
+F64,v31-calc-columns-row,Customer,1561200,3750432,0,12616283,17927915
+F64,v31-calc-columns-row,Sales,118995840,31165696,247152,74649768,225058456
+F64,v32-calc-columns-aggregate,Store,3080,4128,0,81294,88502
+F64,v32-calc-columns-aggregate,Currency Exchange,375800,158424,6440,211448,752112
+F64,v32-calc-columns-aggregate,Sales,87540272,47194872,247152,199150320,334132616
+F64,v32-calc-columns-aggregate,Date,65656,243000,0,659570,968226
+F64,v32-calc-columns-aggregate,Customer,3415664,4847048,0,12958107,21220819
+F64,v32-calc-columns-aggregate,Product,65128,129520,0,549242,743890
+F64,v33-auto-date-time,Store,1848,2936,104,80586,85474
+F64,v33-auto-date-time,LocalDateTable_6de0bfc2-afd9-4dd2-a933-748228565f4a,100968,615968,0,1380488,2097424
+F64,v33-auto-date-time,LocalDateTable_9bda53c9-790b-40df-86d2-d565dc009619,22048,136512,0,238144,396704
+F64,v33-auto-date-time,Date,45976,183368,0,338398,567742
+F64,v33-auto-date-time,LocalDateTable_3aff66cb-6dfd-47ca-9a42-497335326a4c,9672,64144,0,140596,214412
+F64,v33-auto-date-time,DateTableTemplate_4480cbb2-f404-4011-86a8-642f278a0957,1080,384,0,35068,36532
+F64,v33-auto-date-time,Product,40912,67424,0,371402,479738
+F64,v33-auto-date-time,Sales,40419144,4974144,247152,3913216,49553656
+F64,v33-auto-date-time,Currency Exchange,375800,158424,6440,211448,752112
+F64,v33-auto-date-time,Customer,1561200,3847040,48304,13420883,18877427
+F64,v34-auto-date-time-no-date-table,Date,45976,183368,6664,338398,574406
+F64,v34-auto-date-time-no-date-table,LocalDateTable_1b38f259-868b-4015-a94c-d1f9e4a98881,14960,100352,0,216908,332220
+F64,v34-auto-date-time-no-date-table,LocalDateTable_d0409dc1-d171-4614-abcd-623bbc47edad,9672,64144,0,140596,214412
+F64,v34-auto-date-time-no-date-table,Currency Exchange,375800,158424,6440,211448,752112
+F64,v34-auto-date-time-no-date-table,Store,1848,2936,104,80586,85474
+F64,v34-auto-date-time-no-date-table,LocalDateTable_9f1c7dd5-24f6-4ba4-a502-4a3925a51771,22048,136512,0,238144,396704
+F64,v34-auto-date-time-no-date-table,Customer,1561200,3847040,48304,13420883,18877427
+F64,v34-auto-date-time-no-date-table,Product,40912,67424,0,371402,479738
+F64,v34-auto-date-time-no-date-table,LocalDateTable_e37b02a1-0efa-4254-aa93-8423e79678d3,100968,615968,0,1380488,2097424
+F64,v34-auto-date-time-no-date-table,Sales,40419144,4974144,247152,3913216,49553656
+F64,v34-auto-date-time-no-date-table,LocalDateTable_e99b97ac-1a7a-47d3-b238-929637c6729c,14960,100352,0,216908,332220
+F64,v34-auto-date-time-no-date-table,DateTableTemplate_05f2c78a-72b7-45c3-add7-bbb24033ecee,1080,384,0,35068,36532
+F64,v35-calc-tables-four-copies,Customer,23605712,35531584,0,188743920,247881216
+F64,v35-calc-tables-four-copies,Date,45976,183368,0,1386950,1616294
+F64,v35-calc-tables-four-copies,Product,40912,67424,0,6585244,6693580
+F64,v35-calc-tables-four-copies,Sales,374943936,50681688,3605544,41453208,470684376
+F64,v35-calc-tables-four-copies,Store,2024,2696,0,4267128,4271848
+F64,v35-calc-tables-four-copies,Currency Exchange,375800,158424,6440,2308520,2849184
+F64,v35-calc-tables-four-copies,Sales Copy,1991959384,45888896,0,10560016,2048408296
+F64,v35-calc-tables-four-copies,Sales Summary,120397328,18359840,0,1070360,139827528
+F64,v35-calc-tables-four-copies,Product Date Grid,14162008,52480,0,1318580,15533068
+F64,v35-calc-tables-four-copies,Calendar Auto,122392,144096,0,1078072,1344560
+F64,v36-calc-summary-month-grain,Currency Exchange,375800,158424,6440,211448,752112
+F64,v36-calc-summary-month-grain,Store,2024,2696,0,77986,82706
+F64,v36-calc-summary-month-grain,Product Date Grid,14162008,52480,0,270254,14484742
+F64,v36-calc-summary-month-grain,Sales Summary,150708976,14645600,0,41424,165396000
+F64,v36-calc-summary-month-grain,Calendar Auto,122392,144096,0,36151,302639
+F64,v36-calc-summary-month-grain,Date,45976,183368,0,338398,567742
+F64,v36-calc-summary-month-grain,Sales,374943936,50681688,3605544,40404672,469635840
+F64,v36-calc-summary-month-grain,Product,40912,67424,0,371402,479738
+F64,v36-calc-summary-month-grain,Sales Copy,499659592,45888880,0,3680996,549229468
+F64,v36-calc-summary-month-grain,Customer,23605712,35531584,0,125407127,184544423
+F64,v99-kitchen-sink,Customer,1904,0,0,7224,9128
+F64,v99-kitchen-sink,Date,2448,0,0,8016,10464
+F64,v99-kitchen-sink,Product,2040,0,0,7048,9088
+F64,v99-kitchen-sink,Sales,3264,0,0,9696,12960
+F64,v99-kitchen-sink,Store,1360,0,0,4304,5664
+F64,v99-kitchen-sink,Currency Exchange,680,0,0,2112,2792
+F64,v99-kitchen-sink,Sales Flat,4216,0,0,17544,21760
+F64,v99-kitchen-sink,Customer Stats,816,0,0,1976,2792
+F64,v99-kitchen-sink,Sales Copy,4216,0,0,13328,17544
+F64,v99-kitchen-sink,Sales Summary,952,0,0,2608,3560
+F64,v99-kitchen-sink,Product Date Grid,544,0,0,1560,2104
+F64,v99-kitchen-sink,Calendar Auto,544,0,0,1560,2104
+F64,v99a-no-big-calc-tables,Customer,1904,0,0,7224,9128
+F64,v99a-no-big-calc-tables,Date,2448,0,0,8016,10464
+F64,v99a-no-big-calc-tables,Product,2040,0,0,7048,9088
+F64,v99a-no-big-calc-tables,Sales,3264,0,0,9696,12960
+F64,v99a-no-big-calc-tables,Store,1360,0,0,4304,5664
+F64,v99a-no-big-calc-tables,Currency Exchange,680,0,0,2112,2792
+F64,v99a-no-big-calc-tables,Customer Stats,816,0,0,1976,2792
+F64,v99a-no-big-calc-tables,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99a-no-big-calc-tables,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99a-no-big-calc-tables,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99a-no-big-calc-tables,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99a-no-big-calc-tables,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99b-one-sales-copy,Customer,1904,0,0,7224,9128
+F64,v99b-one-sales-copy,Date,2448,0,0,8016,10464
+F64,v99b-one-sales-copy,Product,2040,0,0,7048,9088
+F64,v99b-one-sales-copy,Sales,3264,0,0,9696,12960
+F64,v99b-one-sales-copy,Store,1360,0,0,4304,5664
+F64,v99b-one-sales-copy,Currency Exchange,680,0,0,2112,2792
+F64,v99b-one-sales-copy,Sales Flat,4216,0,0,17544,21760
+F64,v99b-one-sales-copy,Customer Stats,816,0,0,1976,2792
+F64,v99b-one-sales-copy,Sales Copy,4216,0,0,13328,17544
+F64,v99b-one-sales-copy,Sales Summary,952,0,0,2608,3560
+F64,v99b-one-sales-copy,Product Date Grid,544,0,0,1560,2104
+F64,v99b-one-sales-copy,Calendar Auto,544,0,0,1560,2104
+F64,v99c-crossjoin-only,Customer,1904,0,0,7224,9128
+F64,v99c-crossjoin-only,Date,2448,0,0,8016,10464
+F64,v99c-crossjoin-only,Product,2040,0,0,7048,9088
+F64,v99c-crossjoin-only,Sales,3264,0,0,9696,12960
+F64,v99c-crossjoin-only,Store,1360,0,0,4304,5664
+F64,v99c-crossjoin-only,Currency Exchange,680,0,0,2112,2792
+F64,v99c-crossjoin-only,Sales Flat,4216,0,0,17544,21760
+F64,v99c-crossjoin-only,Customer Stats,816,0,0,1976,2792
+F64,v99c-crossjoin-only,Sales Copy,4216,0,0,13328,17544
+F64,v99c-crossjoin-only,Sales Summary,952,0,0,2608,3560
+F64,v99c-crossjoin-only,Product Date Grid,544,0,0,1560,2104
+F64,v99c-crossjoin-only,Calendar Auto,544,0,0,1560,2104
+F64,v99d-power-query,Customer,1904,0,0,7224,9128
+F64,v99d-power-query,Date,2448,0,0,8016,10464
+F64,v99d-power-query,Product,2040,0,0,7048,9088
+F64,v99d-power-query,Sales,3264,0,0,9696,12960
+F64,v99d-power-query,Store,1360,0,0,4304,5664
+F64,v99d-power-query,Currency Exchange,680,0,0,2112,2792
+F64,v99d-power-query,Customer Stats,816,0,0,1976,2792
+F64,v99d-power-query,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99d-power-query,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99d-power-query,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99d-power-query,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99d-power-query,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99e-sales-flat,Customer,1904,0,0,7224,9128
+F64,v99e-sales-flat,Date,2448,0,0,8016,10464
+F64,v99e-sales-flat,Product,2040,0,0,7048,9088
+F64,v99e-sales-flat,Sales,3264,0,0,9696,12960
+F64,v99e-sales-flat,Store,1360,0,0,4304,5664
+F64,v99e-sales-flat,Currency Exchange,680,0,0,2112,2792
+F64,v99e-sales-flat,Customer Stats,816,0,0,1976,2792
+F64,v99e-sales-flat,Sales Flat,4216,0,0,17544,21760
+F64,v99e-sales-flat,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99e-sales-flat,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99e-sales-flat,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99e-sales-flat,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99e-sales-flat,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99e-sales-flat,LocalDateTable_1493cd7b-181f-4155-af1b-f284a38167df,1088,0,0,3160,4248
+F64,v99f-calc-tables,Customer,1904,0,0,7224,9128
+F64,v99f-calc-tables,Date,2448,0,0,8016,10464
+F64,v99f-calc-tables,Product,2040,0,0,7048,9088
+F64,v99f-calc-tables,Sales,3264,0,0,9696,12960
+F64,v99f-calc-tables,Store,1360,0,0,4304,5664
+F64,v99f-calc-tables,Currency Exchange,680,0,0,2112,2792
+F64,v99f-calc-tables,Customer Stats,816,0,0,1976,2792
+F64,v99f-calc-tables,Sales Flat,4216,0,0,17544,21760
+F64,v99f-calc-tables,Sales Summary,952,0,0,2608,3560
+F64,v99f-calc-tables,Product Date Grid,544,0,0,1560,2104
+F64,v99f-calc-tables,Calendar Auto,544,0,0,1560,2104
+F64,v99f-calc-tables,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99f-calc-tables,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99f-calc-tables,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99f-calc-tables,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99f-calc-tables,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99g-sales-copy,Customer,1904,0,0,7224,9128
+F64,v99g-sales-copy,Date,2448,0,0,8016,10464
+F64,v99g-sales-copy,Product,2040,0,0,7048,9088
+F64,v99g-sales-copy,Sales,3264,0,0,9696,12960
+F64,v99g-sales-copy,Store,1360,0,0,4304,5664
+F64,v99g-sales-copy,Currency Exchange,680,0,0,2112,2792
+F64,v99g-sales-copy,Customer Stats,816,0,0,1976,2792
+F64,v99g-sales-copy,Sales Flat,4216,0,0,17544,21760
+F64,v99g-sales-copy,Sales Copy,4216,0,0,13328,17544
+F64,v99g-sales-copy,Sales Summary,952,0,0,2608,3560
+F64,v99g-sales-copy,Product Date Grid,544,0,0,1560,2104
+F64,v99g-sales-copy,Calendar Auto,544,0,0,1560,2104
+F64,v99g-sales-copy,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99g-sales-copy,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99g-sales-copy,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99g-sales-copy,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99g-sales-copy,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99h-staging-buffers,Customer,1904,0,0,7224,9128
+F64,v99h-staging-buffers,Date,2448,0,0,8016,10464
+F64,v99h-staging-buffers,Product,2040,0,0,7048,9088
+F64,v99h-staging-buffers,Sales,3264,0,0,9696,12960
+F64,v99h-staging-buffers,Store,1360,0,0,4304,5664
+F64,v99h-staging-buffers,Currency Exchange,680,0,0,2112,2792
+F64,v99h-staging-buffers,Customer Stats,816,0,0,1976,2792
+F64,v99h-staging-buffers,Sales Flat,4216,0,0,17544,21760
+F64,v99h-staging-buffers,Sales Copy,4216,0,0,13328,17544
+F64,v99h-staging-buffers,Sales Summary,952,0,0,2608,3560
+F64,v99h-staging-buffers,Product Date Grid,544,0,0,1560,2104
+F64,v99h-staging-buffers,Calendar Auto,544,0,0,1560,2104
+F64,v99h-staging-buffers,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99h-staging-buffers,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99h-staging-buffers,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99h-staging-buffers,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99h-staging-buffers,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99i-buffer-stg-sales,Customer,1904,0,0,7224,9128
+F64,v99i-buffer-stg-sales,Date,2448,0,0,8016,10464
+F64,v99i-buffer-stg-sales,Product,2040,0,0,7048,9088
+F64,v99i-buffer-stg-sales,Sales,3264,0,0,9696,12960
+F64,v99i-buffer-stg-sales,Store,1360,0,0,4304,5664
+F64,v99i-buffer-stg-sales,Currency Exchange,680,0,0,2112,2792
+F64,v99i-buffer-stg-sales,Customer Stats,816,0,0,1976,2792
+F64,v99i-buffer-stg-sales,Sales Flat,4216,0,0,17544,21760
+F64,v99i-buffer-stg-sales,Sales Copy,4216,0,0,13328,17544
+F64,v99i-buffer-stg-sales,Sales Summary,952,0,0,2608,3560
+F64,v99i-buffer-stg-sales,Product Date Grid,544,0,0,1560,2104
+F64,v99i-buffer-stg-sales,Calendar Auto,544,0,0,1560,2104
+F64,v99i-buffer-stg-sales,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99i-buffer-stg-sales,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99i-buffer-stg-sales,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99i-buffer-stg-sales,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99i-buffer-stg-sales,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99j-buffer-stg-customer,Customer,1904,0,0,7224,9128
+F64,v99j-buffer-stg-customer,Date,2448,0,0,8016,10464
+F64,v99j-buffer-stg-customer,Product,2040,0,0,7048,9088
+F64,v99j-buffer-stg-customer,Sales,3264,0,0,9696,12960
+F64,v99j-buffer-stg-customer,Store,1360,0,0,4304,5664
+F64,v99j-buffer-stg-customer,Currency Exchange,680,0,0,2112,2792
+F64,v99j-buffer-stg-customer,Customer Stats,816,0,0,1976,2792
+F64,v99j-buffer-stg-customer,Sales Flat,4216,0,0,17544,21760
+F64,v99j-buffer-stg-customer,Sales Copy,4216,0,0,13328,17544
+F64,v99j-buffer-stg-customer,Sales Summary,952,0,0,2608,3560
+F64,v99j-buffer-stg-customer,Product Date Grid,544,0,0,1560,2104
+F64,v99j-buffer-stg-customer,Calendar Auto,544,0,0,1560,2104
+F64,v99j-buffer-stg-customer,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99j-buffer-stg-customer,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99j-buffer-stg-customer,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99j-buffer-stg-customer,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99j-buffer-stg-customer,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99k-no-buffers,Customer,1904,0,0,7224,9128
+F64,v99k-no-buffers,Date,2448,0,0,8016,10464
+F64,v99k-no-buffers,Product,2040,0,0,7048,9088
+F64,v99k-no-buffers,Sales,3264,0,0,9696,12960
+F64,v99k-no-buffers,Store,1360,0,0,4304,5664
+F64,v99k-no-buffers,Currency Exchange,680,0,0,2112,2792
+F64,v99k-no-buffers,Customer Stats,816,0,0,1976,2792
+F64,v99k-no-buffers,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99k-no-buffers,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99k-no-buffers,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99k-no-buffers,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99k-no-buffers,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99l-no-calc-columns,Customer,1904,0,0,7224,9128
+F64,v99l-no-calc-columns,Date,2448,0,0,8016,10464
+F64,v99l-no-calc-columns,Product,2040,0,0,7048,9088
+F64,v99l-no-calc-columns,Sales,2176,0,0,5472,7648
+F64,v99l-no-calc-columns,Store,1360,0,0,4304,5664
+F64,v99l-no-calc-columns,Currency Exchange,680,0,0,2112,2792
+F64,v99l-no-calc-columns,Customer Stats,816,0,0,1976,2792
+F64,v99l-no-calc-columns,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99l-no-calc-columns,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99l-no-calc-columns,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99l-no-calc-columns,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99l-no-calc-columns,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99m-baseline-pq,Customer,1904,0,0,7224,9128
+F64,v99m-baseline-pq,Date,2448,0,0,8016,10464
+F64,v99m-baseline-pq,Product,2040,0,0,7048,9088
+F64,v99m-baseline-pq,Sales,2992,0,0,9064,12056
+F64,v99m-baseline-pq,Store,1360,0,0,4304,5664
+F64,v99m-baseline-pq,Currency Exchange,680,0,0,2112,2792
+F64,v99m-baseline-pq,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99m-baseline-pq,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99m-baseline-pq,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99m-baseline-pq,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99n-text-staging,Customer,1904,0,0,7224,9128
+F64,v99n-text-staging,Date,2448,0,0,8016,10464
+F64,v99n-text-staging,Product,2040,0,0,7048,9088
+F64,v99n-text-staging,Sales,2992,0,0,9064,12056
+F64,v99n-text-staging,Store,1360,0,0,4304,5664
+F64,v99n-text-staging,Currency Exchange,680,0,0,2112,2792
+F64,v99n-text-staging,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99n-text-staging,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99n-text-staging,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99n-text-staging,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99o-sorts,Customer,1904,0,0,7224,9128
+F64,v99o-sorts,Date,2448,0,0,8016,10464
+F64,v99o-sorts,Product,2040,0,0,7048,9088
+F64,v99o-sorts,Sales,2992,0,0,9064,12056
+F64,v99o-sorts,Store,1360,0,0,4304,5664
+F64,v99o-sorts,Currency Exchange,680,0,0,2112,2792
+F64,v99o-sorts,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99o-sorts,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99o-sorts,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99o-sorts,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99p-high-cardinality,Customer,1904,0,0,7224,9128
+F64,v99p-high-cardinality,Date,2448,0,0,8016,10464
+F64,v99p-high-cardinality,Product,2040,0,0,7048,9088
+F64,v99p-high-cardinality,Sales,3264,0,0,9696,12960
+F64,v99p-high-cardinality,Store,1360,0,0,4304,5664
+F64,v99p-high-cardinality,Currency Exchange,680,0,0,2112,2792
+F64,v99p-high-cardinality,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99p-high-cardinality,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99p-high-cardinality,LocalDateTable_7a86fc38-d9e5-4bdd-9e9c-2c84aceba259,1088,0,0,3160,4248
+F64,v99p-high-cardinality,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99p-high-cardinality,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248
+F64,v99q-customer-stats,Customer,1904,0,0,7224,9128
+F64,v99q-customer-stats,Date,2448,0,0,8016,10464
+F64,v99q-customer-stats,Product,2040,0,0,7048,9088
+F64,v99q-customer-stats,Sales,2992,0,0,9064,12056
+F64,v99q-customer-stats,Store,1360,0,0,4304,5664
+F64,v99q-customer-stats,Currency Exchange,680,0,0,2112,2792
+F64,v99q-customer-stats,Customer Stats,816,0,0,1976,2792
+F64,v99q-customer-stats,DateTableTemplate_bda775d5-d7fb-4133-ac68-c3454dbd392f,1088,0,0,3160,4248
+F64,v99q-customer-stats,LocalDateTable_c97fe31c-54a8-461d-a1b2-5a524a355c12,1088,0,0,3160,4248
+F64,v99q-customer-stats,LocalDateTable_46319c04-1847-47b2-8182-70e3e853ff2b,1088,0,0,3160,4248
+F64,v99q-customer-stats,LocalDateTable_0d073540-cbbe-4217-8c52-86a1f38532d0,1088,0,0,3160,4248

@@ -60,3 +60,16 @@ F64, 1M, 2026-11-11 and 2026-11-12. Refresh run `20261111T204204Z-v28-3f3b`, que
 - Model: almost twice the baseline in memory (171.5 MB against 92.7 MB). The backup size in the refresh log is slightly smaller (69.1 MB against 72.7 MB), so the two measures disagree in direction. The size in memory is what the capacity holds.
 - Refresh: CPU about 1.5 to 2 times the baseline, peak 777 MB, above the baseline range by 79 MB. One run.
 - Queries: one run on the evening of 2026-11-11, with no v00-baseline run next to it: on p20 the slowest visual took 1,047 ms against 672 to 719 ms, and p05 250 ms against 125 to 141 ms. On 2026-11-12 the capacity itself was about twice as slow for a whole afternoon (v00 p05 266 to 282 ms, p20 1,424 to 1,563 ms), and these numbers look like that. So the slowdown is not confirmed; it needs a run alternating with v00. The peak per query is half the baseline (28 MB against 58 MB); v29 shows the same, so it comes from the text keys. Memory does not drift with the capacity the way time does.
+
+### Query runs alternating with v00-baseline, F64, 1M, 2026-11-13
+
+| Time (UTC) | Model | p05 slowest visual | p20 slowest visual | p20 CPU | p20 peak per query |
+|---|---|---|---|---|---|
+| 14:14 | v00-baseline | 125 ms | 703 ms | 2,000 ms | 58 MB |
+| 14:31 | v28 | 125 ms | 547 ms | 1,690 ms | 28 MB |
+| 15:54 | v00-baseline | 125 ms | 672 ms | 1,877 ms | 58 MB |
+| 16:07 | v28 | 125 ms | 563 ms | 1,813 ms | 28 MB |
+
+One of 125 queries in the first v28 run failed with HTTP 500 from the REST API, once.
+
+Next to the baseline v28 is not slower; its slowest visual is a little faster, and its largest query needs half the memory. Query time on F64 has a fast and a slow state per model, about two times apart, that last for hours and change by themselves (`docs/lab-findings-queries.md`, finding 7). Memory per query does not change with it. The first run on 2026-11-11 (1,047 ms) was in the slow state, still below the baseline's slow state (1,283 to 1,563 ms).

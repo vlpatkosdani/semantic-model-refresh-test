@@ -72,3 +72,17 @@ Repeat runs on 2026-11-10 (v00 `20261110T194546Z-v00-cdd8`, v22 `20261110T195815
 | repeat | 719 ms | 750 ms | 688 ms | 625 ms |
 
 In the repeat v22 is as fast as v00, so the first run's 1,047 ms was run-to-run spread, not an effect of the calculated columns. Calculated columns that no visual uses do not change query time here. The repeat's per-page summary file was not downloaded (the sign-in token expired during the download, and the F64 workspace lost its capacity afterwards); the per-query rows are in `results/query-runs.csv` and `results/query-pages.csv`.
+
+### Query runs alternating with v00-baseline, F64, 1M, 2026-11-13
+
+The first two runs that day failed: v22 had never been refreshed in the new F64 workspace (2026-11-11), so it held no data ("The expression referenced a relationship ... which does not hold any data because it needs to be recalculated"). After a refresh (run `20261113T173653Z-v22-df42`: peak 794 MB, Power Query 469 MB, 132.6 MB in memory right after), pages p05 and p20, cold, all visuals at once:
+
+| Time (UTC) | Model | p05 slowest visual | p20 slowest visual | p20 CPU | p20 peak per query |
+|---|---|---|---|---|---|
+| 18:02 | v00-baseline | 250 ms | 1,392 ms | 3,736 ms | 55 MB |
+| 18:55 | v22 | 156 ms | 813 ms | 1,985 ms | 55 MB |
+| 19:00 | v00-baseline | 234 ms | 1,344 ms | 3,204 ms | 55 MB |
+| 19:07 | v22 | 156 ms | 828 ms | 2,142 ms | 55 MB |
+| 20:16 | v00-baseline | 250 ms | 1,393 ms | 3,550 ms | 55 MB |
+
+Query time on F64 has a fast and a slow state per model, about two times apart, that last for hours and change by themselves (`docs/lab-findings-queries.md`, finding 7). Memory per query does not change with it. Here v00 was in the slow state and v22 was not, so these runs do not show the effect of the calculated columns. All three v22 runs (813 to 1,047 ms) are inside the baseline's two states. Not confirmed either way.
