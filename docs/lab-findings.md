@@ -78,7 +78,7 @@ Measured on Premium Per User (100 GB per model) with an XMLA trace on 2026-11-11
 - The calculated tables (a full copy of Sales with six RELATED columns, a SUMMARIZECOLUMNS summary, a product by day CROSSJOIN, CALENDARAUTO) add about 900 MB on 1M and about 11.7 GB on 10M. On 10M that model needs F64, while the clean baseline on the same data peaks at 2 GB.
 - "Outside Power Query" is the total peak minus the Power Query peak. The two peaks may not happen at the same moment, so treat it as an approximation.
 
-The calculated tables do not add up in the peak. They are built one after the other, and the peak is set by the most expensive one. On 10M (F64, 2026-11-13):
+The size of a calculated table does not decide the refresh peak; how it is calculated does. The four calculated tables are independent of each other: each reads only imported tables (Sales, Customer, Product, Date, Store). The refresh log shows they are not built one after the other: in v35 `Product Date Grid` ran while Sales was still loading, and `Sales Copy` and `Sales Summary` both started at 12:37:07 UTC and ran side by side (99 s for the summary, 448 s for the copy). On 10M (F64, 2026-11-13):
 
 | Model | Change against v23 | Peak | Model in memory after |
 |---|---|---|---|

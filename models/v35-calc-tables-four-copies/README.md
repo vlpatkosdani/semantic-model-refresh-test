@@ -37,7 +37,7 @@ F64, 10M, 2026-11-13, harness run `20261113T122445Z-v35-6ea1`:
 | v23 (1 copy), 3 harness runs on 10M | refreshed | 13,062 to 13,139 MB | 1,707 to 1,870 MB | 7.5 to 8.2 min | 809 to 878 s | 1,379 to 1,387 MB |
 | v35 (4 copies) | refreshed | 13,063 MB | 1,601 MB | 17 min | 1,827 s | 2,803 MB |
 
-Four copies did not raise the peak at all. The model doubled (2,803 MB against 1,379 MB), `Sales Copy` took 448 s instead of 99 s for its 94.9M rows, but the peak stayed at 13,063 MB. So the calculated tables do not add up in the peak: they are built one after the other, and a table's working memory is released before the next one starts. The peak is set by the single most expensive step.
+Four copies did not raise the peak at all. The model doubled (2,803 MB against 1,379 MB), `Sales Copy` took 448 s instead of 99 s for its 94.9M rows, but the peak stayed at 13,063 MB. So a bigger copy table does not raise the peak. The four calculated tables are independent of each other: each reads only imported tables (Sales, Customer, Product, Date, Store). The refresh log shows they are not built one after the other: in v35 `Product Date Grid` ran while Sales was still loading, and `Sales Copy` and `Sales Summary` both started at 12:37:07 UTC and ran side by side (99 s for the summary, 448 s for the copy). At the peak both were in memory together, so the copy's working memory did not grow with its row count, or stayed below what the summary needed. The log gives one peak per refresh, not one per table.
 
 That step is most likely `Sales Summary`, a `SUMMARIZECOLUMNS` over customer, year and category with three measures, one of them a `DISTINCTCOUNT`, 16.5M rows on 10M. The refresh log gives one peak for the whole refresh, not one per table, so this is not proven.
 

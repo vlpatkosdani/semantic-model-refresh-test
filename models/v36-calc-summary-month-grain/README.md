@@ -13,7 +13,7 @@ v23-dax-calc-tables with the `Sales Summary` calculated table grouped by month i
 
 ## Why this run
 
-v35 (four copies of `Sales Copy`) had the same refresh peak as v23 on 10M, about 13 GB: the calculated tables do not add up in the peak, the single most expensive one sets it. `Sales Summary` is the most likely one. This run makes that table heavier, to see whether the peak follows it and whether it goes past the 25.6 GB of F64. If it fails on F64, it is run on Premium Per User (100 GB per model), to show that PPU refreshes a model that F64 cannot, on the model side and not in Power Query.
+v35 (four copies of `Sales Copy`) had the same refresh peak as v23 on 10M, about 13 GB: a bigger copy table does not raise the peak. `Sales Summary`, which ran at the same time as `Sales Copy`, is the most likely table to set it. This run makes that table heavier, to see whether the peak follows it and whether it goes past the 25.6 GB of F64. If it fails on F64, it is run on Premium Per User (100 GB per model), to show that PPU refreshes a model that F64 cannot, on the model side and not in Power Query.
 
 ## Expected effect
 
